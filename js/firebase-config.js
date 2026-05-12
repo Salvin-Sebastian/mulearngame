@@ -1,5 +1,5 @@
-import firebase from "firebase/compat/app";
-import "firebase/compat/database";
+import firebase from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js";
+import "https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js";
 
 // ============================================================
 //  CYBER HEIST — Firebase Configuration
