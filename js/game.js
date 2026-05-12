@@ -1,6 +1,7 @@
 /**
- * CYBER HEIST — Game Engine
- * Handles: puzzle rendering, answer validation, timers, scoring, end game
+ * OPERATION SHADOW GRID — Premium Game Engine
+ * Manages rendering of dynamic multi-step tasks, real-time answer evaluations,
+ * collaborative global bonus synchronization, sound feedbacks, and custom ranks.
  */
 import { Lobby } from "./lobby.js";
 import { PUZZLES } from "./puzzles.js";
@@ -14,10 +15,8 @@ const ROLE_COLORS = {
 
 let timerInterval = null;
 let missionStartTime = null;
-let currentMissionTime = null;
-let defenderActed = false;
 
-// ── Audio Feedback ──────────────────────────────────────────────
+// ── Audio Feedback Engine ───────────────────────────────────────
 const AudioController = {
     ctx: null,
     init() {
@@ -30,32 +29,34 @@ const AudioController = {
     },
     playTone(freq, type, duration, vol) {
         if (!this.ctx) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-        
-        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
-        
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + duration);
+        try {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+
+            gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start();
+            osc.stop(this.ctx.currentTime + duration);
+        } catch { }
     },
     playSuccess() {
         this.init();
-        this.playTone(600, 'sine', 0.1, 0.5);
-        setTimeout(() => this.playTone(800, 'sine', 0.3, 0.5), 100);
+        this.playTone(587.33, 'sine', 0.1, 0.4); // D5
+        setTimeout(() => this.playTone(880, 'sine', 0.25, 0.4), 100); // A5
     },
     playError() {
         this.init();
-        this.playTone(300, 'sawtooth', 0.2, 0.5);
-        setTimeout(() => this.playTone(200, 'sawtooth', 0.3, 0.5), 150);
+        this.playTone(220, 'sawtooth', 0.2, 0.4);
+        setTimeout(() => this.playTone(146.83, 'sawtooth', 0.3, 0.4), 120);
     },
     playMsg() {
         this.init();
-        this.playTone(1200, 'square', 0.05, 0.1);
+        this.playTone(1046.50, 'triangle', 0.05, 0.15); // C6
     }
 };
 
@@ -68,13 +69,15 @@ function initGame() {
     setupIntelChat();
     setupScoreboard();
 
-    // Listen for room state changes
+    // Listen for comprehensive mission and player state updates
     Lobby.onMissionChange(roomData => {
+        if (!roomData) return;
         updateMissionDots(roomData.currentMission);
         renderMission(roomData.currentMission, roomData.missionStartAt);
+        renderScoreboard(roomData.players, player.id, roomData);
 
         if (roomData.gameState === 'ended') {
-            showEndGame(roomData.players);
+            showEndGame(roomData.players, roomData);
         }
     });
 }
@@ -82,15 +85,18 @@ function initGame() {
 // ── Role Header ─────────────────────────────────────────────────
 function renderRoleHeader(player) {
     const roles = Lobby.ROLES;
-    const info = roles[player.role];
-    document.getElementById('role-badge').textContent = info.icon + ' ' + info.name;
-    document.getElementById('player-name-display').textContent = player.username;
+    const info = roles[player.role] || { icon: "⚡", name: player.role.toUpperCase() };
     const badge = document.getElementById('role-badge');
-    badge.style.color = ROLE_COLORS[player.role];
-    badge.style.borderColor = ROLE_COLORS[player.role];
+    if (badge) {
+        badge.textContent = info.icon + ' ' + info.name;
+        badge.style.color = ROLE_COLORS[player.role] || '#00ff99';
+        badge.style.borderColor = ROLE_COLORS[player.role] || '#00ff99';
+    }
+    const nameDisplay = document.getElementById('player-name-display');
+    if (nameDisplay) nameDisplay.textContent = player.username;
 }
 
-// ── Mission Dots ─────────────────────────────────────────────────
+// ── Mission Progression Indicators ──────────────────────────────
 function updateMissionDots(current) {
     document.querySelectorAll('.mission-dot').forEach((dot, i) => {
         dot.classList.remove('done', 'active');
@@ -98,16 +104,17 @@ function updateMissionDots(current) {
         else if (i === current) dot.classList.add('active');
     });
     const missions = PUZZLES;
-    if (missions[current]) {
-        document.getElementById('mission-title-display').innerHTML =
-            `<strong>${missions[current].title}</strong> — ${missions[current].subtitle}`;
+    const titleDisplay = document.getElementById('mission-title-display');
+    if (titleDisplay && missions[current]) {
+        titleDisplay.innerHTML = `<strong>${missions[current].title}</strong> — ${missions[current].subtitle}`;
     }
 }
 
-// ── Timer ────────────────────────────────────────────────────────
+// ── Timer & Phase Controls ──────────────────────────────────────
 function startTimer(timeLimit, startAt) {
     if (timerInterval) clearInterval(timerInterval);
     const timerEl = document.getElementById('timer-display');
+    if (!timerEl) return;
 
     function tick() {
         const elapsed = Math.floor((Date.now() - startAt) / 1000);
@@ -117,8 +124,8 @@ function startTimer(timeLimit, startAt) {
         timerEl.textContent = `${m}:${s}`;
 
         timerEl.classList.remove('warn', 'danger');
-        if (remaining <= 10) timerEl.classList.add('danger');
-        else if (remaining <= 30) timerEl.classList.add('warn');
+        if (remaining <= 15) timerEl.classList.add('danger');
+        else if (remaining <= 45) timerEl.classList.add('warn');
 
         if (remaining === 0) {
             clearInterval(timerInterval);
@@ -134,12 +141,15 @@ async function handleTimerExpired() {
     const roomCode = Lobby.getRoom();
     if (!roomCode || !player) return;
 
-    // Only the host advances the mission
     const room = Lobby.readRoom(roomCode);
     if (!room || player.id !== room.host) return;
 
-    const cur = room.currentMission || 0;
+    // Apply time exceeded penalty
+    await Lobby.broadcastScore(-20);
+    await Lobby.updateTeamBonus('perfectMission', false);
+    Lobby.sendIntelMessage("⚠ [TIME EXCEEDED] Phase security collapsed! (-20 pts)");
 
+    const cur = room.currentMission || 0;
     if (cur >= PUZZLES.length - 1) {
         await Lobby.endGame();
     } else {
@@ -147,7 +157,7 @@ async function handleTimerExpired() {
     }
 }
 
-// ── Mission Renderer ────────────────────────────────────────────
+// ── Multi-Step Phase Layout Renderer ────────────────────────────
 function renderMission(missionIndex, startAt) {
     const puzzle = PUZZLES[missionIndex];
     if (!puzzle) return;
@@ -155,59 +165,54 @@ function renderMission(missionIndex, startAt) {
     const player = Lobby.getPlayer();
     const myRole = player.role;
     const myClue = puzzle.clues[myRole];
-    defenderActed = false;
 
-    // Track start time for time-bonus calculation in validateAnswer
     missionStartTime = startAt;
-
     startTimer(puzzle.timeLimit, startAt);
 
-    // Narrative
-    document.getElementById('mission-narrative').textContent = puzzle.narrative;
+    const narrativeEl = document.getElementById('mission-narrative');
+    if (narrativeEl) narrativeEl.textContent = puzzle.narrative;
 
-    // ── Primary clue info ──────────────────────────────────────────
+    // Render Clues & Sub-Tasks
     const clueLabel = document.getElementById('clue-label');
     const clueList = document.getElementById('clue-list');
-    clueLabel.textContent = myClue.label;
-    clueList.innerHTML = '';
-    myClue.info.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'clue-item';
-        div.innerHTML = item;
-        clueList.appendChild(div);
-    });
+    if (clueLabel) clueLabel.textContent = myClue?.label || "INTEL BRIEF";
+    if (clueList) {
+        clueList.innerHTML = '';
+        (myClue?.info || []).forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'clue-item';
+            div.innerHTML = item;
+            clueList.appendChild(div);
+        });
+    }
 
-    // ── Detect absent roles & merge their clues ────────────────────
+    // Handle Inherited Tasks from Absent Roles
     const activeRoles = Lobby.getActiveRoles();
     const allRoles = ['recon', 'cryptographer', 'exploiter', 'defender'];
     const absentRoles = allRoles.filter(r => !activeRoles.includes(r));
     const mergeMap = puzzle.roleMergeMap || {};
 
-    // Determine which absent roles this player inherits
     const inheritedRoles = [];
     absentRoles.forEach(absentRole => {
         let target = mergeMap[absentRole];
-        // If target is also absent, follow the chain
         let visited = new Set();
         while (target && !activeRoles.includes(target) && !visited.has(target)) {
             visited.add(target);
             target = mergeMap[target];
         }
-        // If we land on our role, we inherit it
         if (target === myRole) {
             inheritedRoles.push(absentRole);
         }
     });
 
-    // Render bonus intel sections for inherited roles
+    // Render bonus clues for inherited roles
     inheritedRoles.forEach(absentRole => {
         const bonusClue = puzzle.clues[absentRole];
-        if (!bonusClue) return;
+        if (!bonusClue || !clueList) return;
 
-        // Separator
         const sep = document.createElement('div');
-        sep.style.cssText = 'margin:16px 0 8px;padding:8px 12px;background:rgba(0,255,153,0.08);border-left:3px solid var(--green);font-family:var(--font-head);font-size:0.65rem;color:var(--green);letter-spacing:0.15em;';
-        sep.textContent = `📡 BONUS INTEL — ${bonusClue.label}`;
+        sep.style.cssText = 'margin:16px 0 8px;padding:8px 12px;background:rgba(0,229,255,0.06);border-left:3px solid var(--crypto);font-family:var(--font-head);font-size:0.65rem;color:var(--crypto);letter-spacing:0.15em;';
+        sep.textContent = `📡 INHERITED LINK — ${bonusClue.label}`;
         clueList.appendChild(sep);
 
         bonusClue.info.forEach(item => {
@@ -218,220 +223,386 @@ function renderMission(missionIndex, startAt) {
         });
     });
 
-    // Question
-    document.getElementById('action-question').textContent = myClue.question;
-
-    // Input area — primary role's input
+    // Render Interactive Sub-Tasks Action Box
     const actionBox = document.getElementById('answer-input-area');
+    if (!actionBox) return;
     actionBox.innerHTML = '';
-    renderInputArea(myClue, puzzle, missionIndex, actionBox);
 
-    // Also render inputs from inherited absent roles
+    const flowContainer = document.createElement('div');
+    flowContainer.className = 'task-flow-container';
+
+    // Render primary role sub-tasks
+    if (myClue && myClue.tasks) {
+        renderSubTaskArray(myClue.tasks, puzzle, missionIndex, flowContainer, false);
+    }
+
+    // Render inherited sub-tasks
     inheritedRoles.forEach(absentRole => {
         const bonusClue = puzzle.clues[absentRole];
-        if (!bonusClue || !bonusClue.input) return;
+        if (!bonusClue || !bonusClue.tasks) return;
 
-        const bonusHeader = document.createElement('div');
-        bonusHeader.style.cssText = 'margin-top:16px;padding:6px 10px;background:rgba(0,255,153,0.06);border-left:3px solid var(--cyan);font-family:var(--font-head);font-size:0.6rem;color:var(--cyan);letter-spacing:0.15em;margin-bottom:8px;';
-        bonusHeader.textContent = `📡 ${Lobby.ROLES[absentRole]?.name || absentRole.toUpperCase()} ACTION`;
-        actionBox.appendChild(bonusHeader);
+        const header = document.createElement('div');
+        header.style.cssText = 'margin-top:16px;padding:6px 12px;background:rgba(255,204,0,0.08);border-left:3px solid var(--defender);font-family:var(--font-head);font-size:0.65rem;color:var(--defender);letter-spacing:0.12em;';
+        header.textContent = `⚡ INHERITED TASKS: ${Lobby.ROLES[absentRole]?.name || absentRole.toUpperCase()}`;
+        flowContainer.appendChild(header);
 
-        const bonusQuestion = document.createElement('div');
-        bonusQuestion.style.cssText = 'font-family:var(--font-mono);font-size:0.78rem;color:var(--text);margin-bottom:8px;line-height:1.4;';
-        bonusQuestion.textContent = bonusClue.question;
-        actionBox.appendChild(bonusQuestion);
+        renderSubTaskArray(bonusClue.tasks, puzzle, missionIndex, flowContainer, true);
+    });
 
-        renderInputArea(bonusClue, puzzle, missionIndex, actionBox);
+    actionBox.appendChild(flowContainer);
+
+    // Render Shared Master Phase Override Form at the bottom
+    renderMasterPhaseUplink(puzzle, missionIndex, actionBox);
+}
+
+// ── Multi-Step Task Action Engine ───────────────────────────────
+function renderSubTaskArray(tasks, puzzle, missionIndex, container, isInherited) {
+    const room = Lobby.readRoom(Lobby.getRoom());
+    const player = Lobby.getPlayer();
+    const pData = room?.players?.[player.id];
+
+    tasks.forEach(task => {
+        const taskKey = `${puzzle.id}_${task.id}`;
+        const isCompleted = pData?.tasksCompleted?.[taskKey];
+
+        const stepDiv = document.createElement('div');
+        stepDiv.className = `task-step ${isCompleted ? 'completed' : ''}`;
+        stepDiv.id = `task-step-${taskKey}`;
+
+        // Header showing title and points
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'task-step-header';
+        headerDiv.innerHTML = `
+            <div class="task-step-title">${task.title}</div>
+            <div class="task-step-points">+${task.points} PTS</div>
+        `;
+        stepDiv.appendChild(headerDiv);
+
+        const actionDiv = document.createElement('div');
+        actionDiv.className = 'task-step-action';
+
+        if (isCompleted) {
+            actionDiv.innerHTML = `<span class="badge badge-green" style="font-size:0.7rem">✓ SECURED</span>`;
+        } else {
+            if (task.type === 'button') {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-sm btn-cyan';
+                btn.innerHTML = `<span>${task.actionText || 'Execute'}</span>`;
+                btn.onclick = async () => {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span>✓ VERIFIED</span>';
+                    stepDiv.classList.add('completed');
+                    AudioController.playSuccess();
+
+                    await Lobby.markTaskCompleted(puzzle.id, task.id);
+                    await Lobby.broadcastScore(task.points);
+                    showToast(`⚡ Sub-task secured! +${task.points} pts`, 'cyan');
+                    await Lobby.sendIntelMessage(`⚡ Secured: ${task.title} (+${task.points} pts)`);
+
+                    // Trigger collaborative evaluation
+                    checkGlobalTaskSync(missionIndex);
+                };
+                actionDiv.appendChild(btn);
+
+            } else if (task.type === 'text') {
+                const inp = document.createElement('input');
+                inp.type = 'text';
+                inp.className = 'input';
+                inp.placeholder = task.placeholder || 'Enter validation key...';
+                inp.style.flex = '1';
+
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-sm';
+                btn.innerHTML = '<span>Verify</span>';
+                btn.onclick = async () => {
+                    const val = inp.value.trim().toLowerCase();
+                    if (val === task.answer) {
+                        inp.disabled = true; btn.disabled = true;
+                        stepDiv.classList.add('completed');
+                        AudioController.playSuccess();
+
+                        await Lobby.markTaskCompleted(puzzle.id, task.id);
+                        await Lobby.broadcastScore(task.points);
+                        showToast(`⚡ Verification matched! +${task.points} pts`, 'green');
+                        await Lobby.sendIntelMessage(`⚡ Verified: ${task.title} (+${task.points} pts)`);
+                        checkGlobalTaskSync(missionIndex);
+                    } else {
+                        AudioController.playError();
+                        const pen = task.penalty || 15;
+                        await Lobby.broadcastScore(-pen);
+                        await Lobby.updateTeamBonus('perfectMission', false);
+                        showToast(`✗ Validation mismatch! -${pen} pts penalty`, 'red');
+                        await Lobby.sendIntelMessage(`⚠ Mistake logged on ${task.title} (-${pen} pts)`);
+                    }
+                };
+                actionDiv.appendChild(inp); actionDiv.appendChild(btn);
+
+            } else if (task.type === 'select') {
+                const sel = document.createElement('select');
+                sel.className = 'input';
+                sel.style.flex = '1';
+                task.options.forEach(o => {
+                    const opt = document.createElement('option');
+                    opt.value = o; opt.textContent = o;
+                    sel.appendChild(opt);
+                });
+
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-sm';
+                btn.innerHTML = '<span>Submit</span>';
+                btn.onclick = async () => {
+                    const val = sel.value;
+                    if (val === task.answer) {
+                        sel.disabled = true; btn.disabled = true;
+                        stepDiv.classList.add('completed');
+                        AudioController.playSuccess();
+
+                        await Lobby.markTaskCompleted(puzzle.id, task.id);
+                        await Lobby.broadcastScore(task.points);
+                        showToast(`⚡ Coordinates relayed! +${task.points} pts`, 'green');
+                        await Lobby.sendIntelMessage(`⚡ Confirmed: ${task.title} (+${task.points} pts)`);
+                        checkGlobalTaskSync(missionIndex);
+                    } else {
+                        AudioController.playError();
+                        const pen = task.penalty || 15;
+                        await Lobby.broadcastScore(-pen);
+                        await Lobby.updateTeamBonus('perfectMission', false);
+                        showToast(`✗ Routing mistake! -${pen} pts penalty`, 'red');
+                        await Lobby.sendIntelMessage(`⚠ Routing error on ${task.title} (-${pen} pts)`);
+                    }
+                };
+                actionDiv.appendChild(sel); actionDiv.appendChild(btn);
+            }
+        }
+        stepDiv.appendChild(actionDiv);
+        container.appendChild(stepDiv);
     });
 }
 
-function renderInputArea(clue, puzzle, missionIndex, actionBox) {
-    const missionKey = puzzle.id;
+// ── Shared Master Phase Passcode Component ──────────────────────
+function renderMasterPhaseUplink(puzzle, missionIndex, container) {
+    const divider = document.createElement('hr');
+    divider.className = 'divider';
+    container.appendChild(divider);
 
-    if (clue.input === 'text') {
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'input mb-8';
-        input.placeholder = clue.placeholder || 'Enter your answer...';
-        input.id = 'puzzle-answer-input';
+    const titleEl = document.createElement('div');
+    titleEl.className = 'action-label';
+    titleEl.textContent = '◈ MASTER PHASE UPLINK OVERRIDE';
+    container.appendChild(titleEl);
 
-        const btn = document.createElement('button');
-        btn.className = 'btn btn-full';
-        btn.innerHTML = '<span>▶ SUBMIT ANSWER</span>';
-        btn.onclick = () => validateAnswer(input.value.trim(), puzzle, missionIndex);
+    const descEl = document.createElement('div');
+    descEl.className = 'text-dim mb-8';
+    descEl.textContent = 'Combine fragments extracted by all 4 roles to advance the entire team.';
+    container.appendChild(descEl);
 
-        const statusEl = document.createElement('div');
-        statusEl.id = 'answer-status';
-        statusEl.className = 'answer-status';
+    const wrap = document.createElement('div');
+    wrap.style.display = 'flex'; wrap.style.gap = '8px'; wrap.style.marginTop = '10px';
 
-        actionBox.appendChild(input);
-        actionBox.appendChild(btn);
-        actionBox.appendChild(statusEl);
+    const inp = document.createElement('input');
+    inp.type = 'text'; inp.className = 'input';
+    inp.placeholder = 'Enter complete synthesized phase code...';
+    inp.id = 'master-phase-input';
 
-    } else if (clue.input === 'select') {
-        const sel = document.createElement('select');
-        sel.className = 'input mb-8';
-        sel.id = 'puzzle-answer-input';
-        clue.options.forEach(opt => {
-            const o = document.createElement('option');
-            o.value = opt; o.textContent = opt;
-            sel.appendChild(o);
-        });
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-cyan';
+    btn.innerHTML = '<span>BREACH</span>';
 
-        const btn = document.createElement('button');
-        btn.className = 'btn btn-full';
-        btn.innerHTML = '<span>▶ SUBMIT SELECTION</span>';
-        btn.onclick = () => validateAnswer(sel.value, puzzle, missionIndex);
+    const statusEl = document.createElement('div');
+    statusEl.className = 'answer-status';
 
-        const statusEl = document.createElement('div');
-        statusEl.id = 'answer-status';
-        statusEl.className = 'answer-status';
-
-        actionBox.appendChild(sel);
-        actionBox.appendChild(btn);
-        actionBox.appendChild(statusEl);
-
-    } else if (clue.input === 'button') {
-        const btn = document.createElement('button');
-        btn.className = 'btn btn-cyan btn-full';
-        btn.innerHTML = `<span>${clue.buttonLabel}</span>`;
-        btn.id = 'defender-btn';
-        btn.onclick = async () => {
-            if (defenderActed) return;
-            defenderActed = true;
-            btn.disabled = true;
-            btn.innerHTML = '<span>✓ DEPLOYED</span>';
-
-            const points = Math.floor(puzzle.points * 0.3);
-            await Lobby.broadcastScore(points);
-            await Lobby.markSolved(puzzle.id);
-            showToast(`+${points} pts — Defensive action complete!`, 'green');
-            await Lobby.sendIntelMessage(`🛡️ [${puzzle.id.toUpperCase()}] Defensive action deployed!`);
-        };
-
-        const infoEl = document.createElement('div');
-        infoEl.className = 'text-dim mt-8';
-        infoEl.textContent = 'Use this once — timing matters!';
-
-        actionBox.appendChild(btn);
-        actionBox.appendChild(infoEl);
-
-    } else {
-        // info-only (recon)
-        const el = document.createElement('div');
-        el.className = 'text-dim';
-        el.innerHTML = '📡 Share your intel with the team using the chat below.';
-        actionBox.appendChild(el);
-    }
-}
-
-// ── Security / Anti-Cheat ───────────────────────────────────────
-async function hashString(str) {
-    const msgBuffer = new TextEncoder().encode(str);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-// ── Answer Validation ───────────────────────────────────────────
-async function validateAnswer(answer, puzzle, missionIndex) {
-    const statusEl = document.getElementById('answer-status');
-    const inputEl = document.getElementById('puzzle-answer-input');
-
-    const inputHash = await hashString(answer.toLowerCase());
-    
-    if (inputHash === puzzle.answerHash) {
-        // Calculate time bonus
-        const elapsed = (Date.now() - missionStartTime) / 1000;
-        const remaining = Math.max(0, puzzle.timeLimit - elapsed);
-        const timeBonus = Math.floor(remaining * 2);
-        const total = puzzle.points + timeBonus;
-
-        if (statusEl) {
+    btn.onclick = async () => {
+        AudioController.init();
+        const val = inp.value.trim().toLowerCase();
+        if (val === puzzle.answerPlain) {
             statusEl.className = 'answer-status correct';
-            statusEl.innerHTML = `✓ CORRECT! +${puzzle.points} pts${timeBonus > 0 ? ` + ${timeBonus} time bonus` : ''}`;
-        }
-        if (inputEl) inputEl.disabled = true;
+            statusEl.innerHTML = '✓ MASTER PASSCODE ACCEPTED!';
+            inp.disabled = true; btn.disabled = true;
+            AudioController.playSuccess();
 
-        AudioController.playSuccess();
-        await Lobby.broadcastScore(total);
-        await Lobby.markSolved(puzzle.id);
-        showToast(`🎯 Correct! +${total} pts`, 'green');
-        await Lobby.sendIntelMessage(`✅ [${puzzle.id.toUpperCase()}] Solved! +${total} pts`);
+            await Lobby.markSolved(puzzle.id);
+            const isLast = missionIndex >= PUZZLES.length - 1;
 
-        // Auto-advance after 3s (host only)
-        const player = Lobby.getPlayer();
-        const room = Lobby.readRoom(Lobby.getRoom());
-        if (room && player.id === room.host) {
-            setTimeout(async () => {
-                const last = missionIndex >= PUZZLES.length - 1;
-                if (last) await Lobby.endGame();
-                else await Lobby.advanceMission(missionIndex + 1);
-            }, 3000);
-        }
+            if (isLast) {
+                // Successful extraction claim
+                await Lobby.updateTeamBonus('missionSuccess', true);
+                
+                // Calculate time bonus
+                const room = Lobby.readRoom(Lobby.getRoom());
+                if (room && room.createdAt) {
+                    const elapsedMin = (Date.now() - room.createdAt) / 60000;
+                    let timeB = 0;
+                    if (elapsedMin <= 5) timeB = 25;
+                    else if (elapsedMin <= 8) timeB = 15;
+                    else if (elapsedMin <= 10) timeB = 10;
+                    await Lobby.updateTeamBonus('timeBonus', timeB);
+                }
 
-    } else {
-        if (statusEl) {
+                showToast('🎯 HEIST COMPLETE! Securing extraction protocols...', 'green');
+                setTimeout(() => Lobby.endGame(), 2000);
+            } else {
+                showToast('🎯 Phase access cleared! Relaying new sequence...', 'cyan');
+                setTimeout(() => Lobby.advanceMission(missionIndex + 1), 3000);
+            }
+        } else {
+            AudioController.playError();
             statusEl.className = 'answer-status wrong';
-            statusEl.innerHTML = `✗ INCORRECT — try again`;
+            statusEl.innerHTML = '✗ ACCESS DENIED — Invalid Phase Uplink Sequence';
+            await Lobby.broadcastScore(-20);
+            await Lobby.updateTeamBonus('perfectMission', false);
+            showToast('✗ Incorrect core override sequence. -20 pts', 'red');
         }
-        // Penalty
-        AudioController.playError();
-        await Lobby.broadcastScore(-50);
-        showToast('✗ Wrong answer. -50 pts', 'red');
+    };
+
+    wrap.appendChild(inp); wrap.appendChild(btn);
+    container.appendChild(wrap); container.appendChild(statusEl);
+}
+
+// ── Collaborative Synchronization Checker ───────────────────────
+async function checkGlobalTaskSync(missionIndex) {
+    const room = Lobby.readRoom(Lobby.getRoom());
+    if (!room || !room.players) return;
+
+    const phase = PUZZLES[missionIndex];
+    if (!phase) return;
+
+    const isPhase1 = phase.id === 'phase1';
+    const isPhase2 = phase.id === 'phase2';
+
+    if (isPhase1 && room.teamBonuses?.smallTasks) return;
+    if (isPhase2 && room.teamBonuses?.mediumTasks) return;
+
+    const activePlayers = Object.values(room.players);
+    let allComplete = true;
+
+    activePlayers.forEach(p => {
+        const roleTasks = phase.clues[p.role]?.tasks || [];
+        roleTasks.forEach(t => {
+            const key = `${phase.id}_${t.id}`;
+            if (!p.tasksCompleted || !p.tasksCompleted[key]) {
+                allComplete = false;
+            }
+        });
+    });
+
+    if (allComplete && activePlayers.length > 0) {
+        if (isPhase1) {
+            await Lobby.updateTeamBonus('smallTasks', true);
+            showToast('🌟 TEAM BONUS: All Outer Perimeter Small Tasks Complete! +20 Team Pts', 'cyan');
+            await Lobby.sendIntelMessage('🌟 [TEAM BONUS] All Small Tasks Completed! (+20 Team Pts)');
+        } else if (isPhase2) {
+            await Lobby.updateTeamBonus('mediumTasks', true);
+            showToast('🌟 TEAM BONUS: All Internal Medium Tasks Complete! +20 Team Pts', 'cyan');
+            await Lobby.sendIntelMessage('🌟 [TEAM BONUS] All Medium Tasks Completed! (+20 Team Pts)');
+        }
     }
 }
 
-// ── Scoreboard ───────────────────────────────────────────────────
+// ── Scoreboard & Global Objective Tracking Panel ────────────────
 function setupScoreboard() {
     const player = Lobby.getPlayer();
     Lobby.onPlayersUpdate(players => {
-        renderScoreboard(players, player.id);
+        const room = Lobby.readRoom(Lobby.getRoom());
+        renderScoreboard(players, player.id, room);
     });
 }
 
-function renderScoreboard(players, myId) {
+function renderScoreboard(players, myId, room) {
     const container = document.getElementById('score-list');
+    if (!container) return;
     container.innerHTML = '';
 
-    let teamTotal = 0;
-    const sorted = Object.entries(players)
+    let baseTeamTotal = 0;
+    const sorted = Object.entries(players || {})
         .sort(([, a], [, b]) => (b.score || 0) - (a.score || 0));
 
     const maxScore = Math.max(...sorted.map(([, p]) => p.score || 0), 1);
 
     sorted.forEach(([pid, p]) => {
         const score = p.score || 0;
-        teamTotal += score;
-        const info = Lobby.ROLES[p.role] || { icon: '?', name: p.role };
+        baseTeamTotal += score;
+        const info = Lobby.ROLES[p.role] || { icon: '⚡', name: p.role.toUpperCase() };
         const isMe = pid === myId;
 
         const card = document.createElement('div');
         card.className = 'score-card' + (isMe ? ' self' : '');
         card.innerHTML = `
-      <div class="score-card-role">${info.icon} ${info.name}${isMe ? ' · YOU' : ''}</div>
-      <div class="score-card-name">${p.username}</div>
-      <div class="score-bar-wrap">
-        <div class="score-bar" style="width:${Math.round((score / maxScore) * 100)}%"></div>
-      </div>
-      <div class="score-val">
-        <span class="score-num">${score.toLocaleString()}</span>
-        <span class="badge ${isMe ? 'badge-green' : 'badge-cyan'}" style="font-size:0.55rem">PTS</span>
-      </div>
-    `;
+            <div style="display:flex;justify-content:space-between">
+                <span class="score-card-role">${info.icon} ${info.name}${isMe ? ' · YOU' : ''}</span>
+            </div>
+            <div class="score-card-name">${p.username}</div>
+            <div class="score-bar-wrap">
+                <div class="score-bar" style="width:${Math.round((Math.max(score,0) / maxScore) * 100)}%"></div>
+            </div>
+            <div class="score-val">
+                <span class="score-num">${score.toLocaleString()}</span>
+                <span class="badge ${isMe ? 'badge-green' : 'badge-cyan'}" style="font-size:0.55rem">PTS</span>
+            </div>
+        `;
         container.appendChild(card);
     });
 
-    document.getElementById('team-total-score').textContent = teamTotal.toLocaleString();
+    // Add Shared Global Team Bonuses to cumulative score
+    let globalBonusTotal = 0;
+    const tB = room?.teamBonuses || {};
+    if (tB.smallTasks) globalBonusTotal += 20;
+    if (tB.mediumTasks) globalBonusTotal += 20;
+    if (tB.missionSuccess) globalBonusTotal += 10;
+    if (tB.perfectMission && room?.gameState === 'ended') globalBonusTotal += 25;
+    globalBonusTotal += (tB.timeBonus || 0);
+
+    const finalCumulativeScore = baseTeamTotal + globalBonusTotal;
+    const scoreDisplay = document.getElementById('team-total-score');
+    if (scoreDisplay) scoreDisplay.textContent = finalCumulativeScore.toLocaleString();
+
+    // Update Global Objectives Checklist Widget live
+    renderGlobalObjectivesWidget(tB, room?.gameState);
 }
 
-// ── Intel Chat ───────────────────────────────────────────────────
+function renderGlobalObjectivesWidget(tB, gameState) {
+    let widget = document.getElementById('global-objectives-widget');
+    if (!widget) {
+        const wrap = document.querySelector('.team-total');
+        if (!wrap) return;
+        widget = document.createElement('div');
+        widget.id = 'global-objectives-widget';
+        widget.className = 'team-bonus-widget';
+        wrap.appendChild(widget);
+    }
+
+    widget.innerHTML = `
+        <div style="font-family:var(--font-head);font-size:0.6rem;color:var(--text-dim);margin-bottom:6px;letter-spacing:0.1em;text-align:left">◈ GLOBAL TEAM OBJECTIVES</div>
+        <div class="team-bonus-item ${tB.smallTasks ? 'active' : ''}">
+            <span>Outer Perimeter Tasks</span>
+            <span class="bonus-check">${tB.smallTasks ? '✓ +20 PTS' : '---'}</span>
+        </div>
+        <div class="team-bonus-item ${tB.mediumTasks ? 'active' : ''}">
+            <span>Core Facility Tasks</span>
+            <span class="bonus-check">${tB.mediumTasks ? '✓ +20 PTS' : '---'}</span>
+        </div>
+        <div class="team-bonus-item ${tB.perfectMission ? 'active' : ''}">
+            <span>Perfect Infiltration Status</span>
+            <span class="bonus-check">${tB.perfectMission ? '✓ ACTIVE' : '✗ BROKEN'}</span>
+        </div>
+        <div class="team-bonus-item ${tB.missionSuccess ? 'active' : ''}">
+            <span>Successful Extraction</span>
+            <span class="bonus-check">${tB.missionSuccess ? '✓ +10 PTS' : '---'}</span>
+        </div>
+        ${tB.timeBonus > 0 ? `
+        <div class="team-bonus-item active">
+            <span>High-Speed Exfil Bonus</span>
+            <span class="bonus-check">✓ +${tB.timeBonus} PTS</span>
+        </div>` : ''}
+    `;
+}
+
+// ── Intel Share Chat Channel ────────────────────────────────────
 function setupIntelChat() {
     const input = document.getElementById('intel-msg-input');
     const sendBtn = document.getElementById('intel-send-btn');
+    if (!input || !sendBtn) return;
 
     async function send() {
-        AudioController.init(); // Initialize audio on user interaction
+        AudioController.init();
         const text = input.value.trim();
         if (!text) return;
         await Lobby.sendIntelMessage(text);
@@ -448,59 +619,109 @@ function setupIntelChat() {
         }
         msgCount = msgs.length;
         const container = document.getElementById('intel-messages');
+        if (!container) return;
         container.innerHTML = '';
         msgs.forEach(msg => {
             const div = document.createElement('div');
             div.className = 'intel-msg';
-            const roleColor = ROLE_COLORS[msg.role] || '#00ff99';
-            div.innerHTML = `<span class="msg-from" style="color:${roleColor}">[${msg.from}]</span> <span class="msg-text">${escapeHtml(msg.text)}</span>`;
+            const rColor = ROLE_COLORS[msg.role] || '#00ff99';
+            div.innerHTML = `<span class="msg-from" style="color:${rColor}">[${escapeHtml(msg.from)}]</span> <span class="msg-text">${escapeHtml(msg.text)}</span>`;
             container.appendChild(div);
         });
         container.scrollTop = container.scrollHeight;
     });
 }
 
-// ── End Game ─────────────────────────────────────────────────────
-function showEndGame(players) {
-    if (timerInterval) clearInterval(timerInterval);
-    document.getElementById('game-page').classList.add('hidden');
-    document.getElementById('endgame-page').classList.remove('hidden');
-
-    const sorted = Object.entries(players)
-        .sort(([, a], [, b]) => (b.score || 0) - (a.score || 0));
-
-    const teamTotal = sorted.reduce((s, [, p]) => s + (p.score || 0), 0);
-    const WIN_THRESHOLD = 500;
-    const won = teamTotal >= WIN_THRESHOLD;
-
-    document.getElementById('endgame-title').textContent = won ? '🎯 HEIST COMPLETE!' : '💀 MISSION FAILED';
-    document.getElementById('endgame-title').className = 'endgame-title ' + (won ? 'win' : 'lose');
-    document.getElementById('endgame-subtitle').textContent = won
-        ? `Team extracted ${teamTotal.toLocaleString()} pts of data. Nice work, crew.`
-        : `Only ${teamTotal.toLocaleString()} pts secured. The system held. Try again.`;
-
-    document.getElementById('endgame-team-score').textContent = teamTotal.toLocaleString() + ' PTS';
-
-    const list = document.getElementById('endgame-score-list');
-    list.innerHTML = '';
-    sorted.forEach(([pid, p], i) => {
-        const info = Lobby.ROLES[p.role] || { icon: '?', name: p.role.toUpperCase() };
-        const row = document.createElement('div');
-        row.className = 'endgame-score-row' + (i === 0 ? ' top' : '');
-        row.innerHTML = `
-      <div>
-        <div class="row-role">${info.icon} ${info.name}</div>
-        <div class="row-name">${p.username}${i === 0 ? ' 🏆' : ''}</div>
-      </div>
-      <div class="row-pts">${(p.score || 0).toLocaleString()}</div>
-    `;
-        list.appendChild(row);
-    });
+// ── Master Rank Structure Evaluator ─────────────────────────────
+function getRankInfo(score) {
+    if (score <= 100) return { rank: "Rookie", desc: "Basic grid infiltration proficiency" };
+    if (score <= 200) return { rank: "Operator", desc: "Standard field network operator" };
+    if (score <= 350) return { rank: "Specialist", desc: "Tactical secure database specialist" };
+    if (score <= 500) return { rank: "Elite Agent", desc: "Flawless core system breacher" };
+    if (score <= 700) return { rank: "Shadow Master", desc: "Supreme multi-node matrix commander" };
+    return { rank: "Cyber Legend", desc: "Absolute high-security facility domination" };
 }
 
-// ── Toast ─────────────────────────────────────────────────────────
+// ── End Game Summary View ───────────────────────────────────────
+function showEndGame(players, room) {
+    if (timerInterval) clearInterval(timerInterval);
+    const gamePage = document.getElementById('game-page');
+    const endPage = document.getElementById('endgame-page');
+    if (gamePage) gamePage.classList.add('hidden');
+    if (endPage) endPage.classList.remove('hidden');
+
+    const sorted = Object.entries(players || {})
+        .sort(([, a], [, b]) => (b.score || 0) - (a.score || 0));
+
+    const baseTeamTotal = sorted.reduce((s, [, p]) => s + (p.score || 0), 0);
+
+    let globalBonusTotal = 0;
+    const tB = room?.teamBonuses || {};
+    if (tB.smallTasks) globalBonusTotal += 20;
+    if (tB.mediumTasks) globalBonusTotal += 20;
+    if (tB.missionSuccess) globalBonusTotal += 10;
+    if (tB.perfectMission) globalBonusTotal += 25;
+    globalBonusTotal += (tB.timeBonus || 0);
+
+    const finalScore = baseTeamTotal + globalBonusTotal;
+    const rankInfo = getRankInfo(finalScore);
+
+    const winTitle = document.getElementById('endgame-title');
+    if (winTitle) {
+        winTitle.textContent = tB.missionSuccess ? '🎯 OPERATION SHADOW GRID COMPLETE!' : '💀 BREACH CONTAINED';
+        winTitle.className = 'endgame-title ' + (tB.missionSuccess ? 'win' : 'lose');
+    }
+    const sub = document.getElementById('endgame-subtitle');
+    if (sub) {
+        sub.textContent = tB.missionSuccess
+            ? `Magnificent execution. Team secured all core access gates with a cumulative combat rating of ${finalScore.toLocaleString()} PTS.`
+            : `Facility security overwhelmed agents. Final extracted data worth ${finalScore.toLocaleString()} PTS. Restart grid.`;
+    }
+
+    const tScore = document.getElementById('endgame-team-score');
+    if (tScore) tScore.textContent = finalScore.toLocaleString() + ' PTS';
+
+    // Inject beautiful Rank Card
+    let rankCardWrap = document.getElementById('endgame-rank-card-wrap');
+    if (!rankCardWrap) {
+        rankCardWrap = document.createElement('div');
+        rankCardWrap.id = 'endgame-rank-card-wrap';
+        if (sub && sub.parentNode) {
+            sub.parentNode.insertBefore(rankCardWrap, sub.nextSibling);
+        }
+    }
+    rankCardWrap.innerHTML = `
+        <div class="rank-card anim-fade-up">
+            <div>
+                <div class="rank-label">ASSIGNED OPERATIONAL RANK</div>
+                <div class="rank-title">${rankInfo.rank}</div>
+                <div style="font-size:0.8rem;color:var(--text-dim);margin-top:2px">${rankInfo.desc}</div>
+            </div>
+        </div>
+    `;
+
+    const list = document.getElementById('endgame-score-list');
+    if (list) {
+        list.innerHTML = '';
+        sorted.forEach(([pid, p], i) => {
+            const info = Lobby.ROLES[p.role] || { icon: '⚡', name: p.role.toUpperCase() };
+            const row = document.createElement('div');
+            row.className = 'endgame-score-row' + (i === 0 ? ' top' : '');
+            row.innerHTML = `
+                <div>
+                    <div class="row-role">${info.icon} ${info.name}</div>
+                    <div class="row-name">${escapeHtml(p.username)}${i === 0 ? ' 🏆 MASTER OP' : ''}</div>
+                </div>
+                <div class="row-pts">${(p.score || 0).toLocaleString()} PTS</div>
+            `;
+            list.appendChild(row);
+        });
+    }
+}
+
 function showToast(msg, type = 'green') {
     const container = document.getElementById('toast-container');
+    if (!container) return;
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.textContent = msg;
@@ -509,7 +730,7 @@ function showToast(msg, type = 'green') {
 }
 
 function escapeHtml(str) {
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return (str || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 export const Game = { initGame, showToast };

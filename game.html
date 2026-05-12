@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cyber Heist — Mission Active</title>
+    <title>Operation Shadow Grid — Mission Active</title>
     <link rel="stylesheet" href="css/style.css" />
 </head>
 
@@ -15,31 +15,30 @@
 
         <!-- Game Header -->
         <header class="game-header">
-            <div class="navbar-brand" style="font-size:0.85rem">CYBER<span style="color:var(--cyan)">HEIST</span></div>
+            <div class="navbar-brand" style="font-size:0.85rem">OPERATION<span style="color:var(--crypto)">SHADOW</span>GRID</div>
 
-            <!-- Mission dots -->
+            <!-- Mission phases progression dots -->
             <div class="mission-dots">
-                <div class="mission-dot active" title="Mission 1"></div>
-                <div class="mission-dot" title="Mission 2"></div>
-                <div class="mission-dot" title="Mission 3"></div>
-                <div class="mission-dot" title="Mission 4"></div>
+                <div class="mission-dot active" title="Phase 1: Entry Operation"></div>
+                <div class="mission-dot" title="Phase 2: Core Facility"></div>
+                <div class="mission-dot" title="Phase 3: Extraction"></div>
             </div>
 
-            <!-- Mission info -->
+            <!-- Mission phase title info -->
             <div class="mission-title" id="mission-title-display">
-                <strong>MISSION 1</strong> — Loading...
+                <strong>PHASE 1</strong> — Loading Matrix Uplink...
             </div>
 
-            <!-- Role badge -->
+            <!-- Assigned combat role badge -->
             <div>
                 <span class="badge badge-green" id="role-badge">---</span>
-                <span style="font-family:var(--font-mono);font-size:0.75rem;color:var(--text-dim);margin-left:8px"
+                <span style="font-family:var(--font-mono);font-size:0.75rem;color:var(--text-dim);margin-left:8px;font-weight:bold"
                     id="player-name-display"></span>
             </div>
 
             <!-- Timer -->
             <div class="timer-wrap">
-                <span class="timer-label">TIME</span>
+                <span class="timer-label">TIMELIMIT</span>
                 <span id="timer-display">--:--</span>
             </div>
         </header>
@@ -49,68 +48,67 @@
             <!-- Panel header -->
             <div class="role-panel-header">
                 <span class="glow-green"
-                    style="font-family:var(--font-head);font-size:0.75rem;letter-spacing:0.15em">YOUR MISSION
+                    style="font-family:var(--font-head);font-size:0.75rem;letter-spacing:0.15em">TACTICAL WORKFLOW
                     BRIEF</span>
-                <span class="badge badge-cyan" id="mission-phase-badge">PHASE 1</span>
+                <span class="badge badge-cyan" id="mission-phase-badge">OPERATION ACTIVE</span>
             </div>
 
-            <!-- Narrative -->
+            <!-- Narrative Context -->
             <div class="narrative-box">
-                <span style="color:var(--cyan);font-size:0.7rem;letter-spacing:0.15em;display:block;margin-bottom:6px">◈
-                    BRIEFING</span>
+                <span style="color:var(--crypto);font-size:0.7rem;letter-spacing:0.15em;display:block;margin-bottom:6px;font-weight:bold">◈
+                    TACTICAL CONTEXT</span>
                 <span id="mission-narrative"></span>
             </div>
 
-            <!-- Clue box -->
+            <!-- Sub-Task Clues Area -->
             <div class="clue-box">
-                <h4 id="clue-label">INTEL FEED</h4>
+                <h4 id="clue-label">INTELLIGENCE FEED</h4>
                 <div id="clue-list"></div>
             </div>
 
-            <!-- Action area -->
+            <!-- Action Area / Dynamic Task Workflow Rendering Container -->
             <div class="action-box">
-                <div class="action-label">◈ YOUR TASK</div>
-                <div style="font-family:var(--font-mono);font-size:0.82rem;color:var(--text);margin-bottom:12px;line-height:1.5"
-                    id="action-question"></div>
+                <div class="action-label" style="font-size:0.85rem">◈ ASSIGNED COMBAT TASKS</div>
                 <div id="answer-input-area"></div>
             </div>
         </main>
 
-        <!-- ── Scoreboard Panel (right) ──────────────────────────────── -->
+        <!-- ── Scoreboard & Global Objective Panel (right) ───────────── -->
         <aside class="scoreboard-panel">
 
-            <!-- Team total -->
+            <!-- Team total combined counter -->
             <div class="team-total">
-                <div class="team-total-label">◈ TEAM SCORE</div>
+                <div class="team-total-label">◈ TOTAL COMBAT RATING</div>
                 <div class="team-total-score" id="team-total-score">0</div>
+                <!-- Global Objectives sync panel rendered dynamically inside here -->
             </div>
 
-            <!-- Per-player scores -->
-            <div class="scoreboard-title">AGENT SCORES</div>
+            <!-- Per-player score breakdowns -->
+            <div class="scoreboard-title" style="margin-top:10px">SPECIALIZED AGENT RATINGS</div>
             <div id="score-list"></div>
 
             <!-- Divider -->
             <hr class="divider" />
 
-            <!-- Intel Chat -->
-            <div class="intel-box">
-                <div class="intel-box-title">📡 TEAM INTEL CHANNEL</div>
+            <!-- Team Secure Communication Interface -->
+            <div class="intel-box" style="flex:1">
+                <div class="intel-box-title">📡 SQUAD COMMUNICATION UPLINK</div>
                 <div class="intel-messages" id="intel-messages">
                     <div class="intel-msg">
-                        <span class="msg-from" style="color:var(--text-dim)">[SYSTEM]</span>
-                        <span class="msg-text"> Use this to share clues with your team.</span>
+                        <span class="msg-from" style="color:var(--text-dim)">[MATRIX GRID]</span>
+                        <span class="msg-text"> Secure terminal initialized. Broadcast intercepted passcodes and timing keys immediately.</span>
                     </div>
                 </div>
                 <div class="intel-input-wrap">
-                    <input type="text" id="intel-msg-input" placeholder="Share intel with team..." maxlength="200" />
-                    <button class="intel-send" id="intel-send-btn" title="Send">▶</button>
+                    <input type="text" id="intel-msg-input" placeholder="Broadcast secure intel..." maxlength="200" />
+                    <button class="intel-send" id="intel-send-btn" title="Transmit">▶</button>
                 </div>
             </div>
 
-            <!-- Room info -->
-            <div style="text-align:center">
-                <div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--text-dim)">ROOM</div>
-                <div style="font-family:var(--font-head);font-size:1rem;color:var(--green)" id="game-room-code">----
+            <!-- Secure Room reference details -->
+            <div style="text-align:center;margin-top:10px">
+                <div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--text-dim)">ACTIVE ROOM</div>
+                <div style="font-family:var(--font-head);font-size:1.1rem;color:var(--recon);font-weight:bold" id="game-room-code">----
                 </div>
             </div>
 
@@ -119,31 +117,33 @@
 
     <!-- ── End Game Page ─────────────────────────────────────────────── -->
     <div id="endgame-page" class="hidden">
-        <!-- Scanline highlight -->
+        <!-- Scanline highlight overlay -->
         <div
-            style="position:fixed;inset:0;background:radial-gradient(ellipse at center, rgba(0,255,153,0.06) 0%, transparent 70%);pointer-events:none;z-index:0">
+            style="position:fixed;inset:0;background:radial-gradient(ellipse at center, rgba(0,229,255,0.05) 0%, transparent 70%);pointer-events:none;z-index:0">
         </div>
 
-        <div style="position:relative;z-index:1;width:100%;max-width:520px;text-align:center">
-            <div class="hero-tag">MISSION COMPLETE</div>
+        <div style="position:relative;z-index:1;width:100%;max-width:560px;text-align:center">
+            <div class="hero-tag">OPERATIONAL SUMMARY</div>
             <h1 class="endgame-title win" id="endgame-title">---</h1>
             <p class="endgame-sub" id="endgame-subtitle"></p>
 
-            <!-- Team total -->
-            <div class="glass" style="padding:20px;margin-bottom:28px;border-color:var(--cyan)">
-                <div style="font-family:var(--font-head);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.2em">
-                    TOTAL TEAM SCORE</div>
-                <div style="font-family:var(--font-head);font-size:2.5rem;color:var(--cyan);text-shadow:var(--glow-cyan)"
+            <!-- Rank Card Inject target will be right here -->
+
+            <!-- Total final evaluated rating breakdown -->
+            <div class="glass" style="padding:24px;margin-bottom:28px;border-color:var(--crypto);background:rgba(0,0,0,0.6)">
+                <div style="font-family:var(--font-head);font-size:0.7rem;color:var(--text-dim);letter-spacing:0.2em">
+                    COMBINED MISSION RATING</div>
+                <div style="font-family:var(--font-head);font-size:3rem;color:var(--crypto);text-shadow:var(--crypto-glow);font-weight:900"
                     id="endgame-team-score">0</div>
             </div>
 
-            <!-- Per-player breakdown -->
+            <!-- Individual specialist final outcomes -->
             <div class="endgame-scores" id="endgame-score-list"></div>
 
-            <!-- CTA buttons -->
-            <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px">
-                <a href="index.html" class="btn btn-lg"><span>🔄 PLAY AGAIN</span></a>
-                <button class="btn btn-cyan" id="endgame-share-btn"><span>📋 COPY SCORE</span></button>
+            <!-- Navigation triggers -->
+            <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:16px">
+                <a href="index.html" class="btn btn-lg"><span>🔄 RESTART HEIST</span></a>
+                <button class="btn btn-cyan" id="endgame-share-btn"><span>📋 COPY COMBAT RATING</span></button>
             </div>
         </div>
     </div>
@@ -154,9 +154,9 @@
     <script type="module">
         import { Lobby } from "./js/lobby.js";
         import { Game } from "./js/game.js";
-        // ── Boot ──────────────────────────────────────────────────────
+        
+        // ── Operational Boot ──────────────────────────────────────────
         window.addEventListener('DOMContentLoaded', () => {
-            // Restore session from localStorage
             const restored = Lobby.restoreSession();
             if (!restored) {
                 window.location.href = 'index.html';
@@ -164,21 +164,20 @@
             }
 
             const roomCode = Lobby.getRoom();
-            const player = Lobby.getPlayer();
-
-            // Update room code display
             document.getElementById('game-room-code').textContent = roomCode;
 
-            // Init game logic
+            // Trigger main tactical execution loop
             Game.initGame();
         });
 
-        // ── Share Score ───────────────────────────────────────────────
+        // ── Share Squad Rating ────────────────────────────────────────
         document.getElementById('endgame-share-btn').addEventListener('click', () => {
             const score = document.getElementById('endgame-team-score').textContent;
-            const text = `🎯 Cyber Heist: Team Breach — Team Score: ${score}`;
+            const rankCard = document.querySelector('.rank-title');
+            const assignedRank = rankCard ? rankCard.textContent : 'Specialist Operative';
+            const text = `🎯 Operation Shadow Grid Complete!\n🛡️ Operational Rank: ${assignedRank}\n⚡ Combined Combat Rating: ${score}`;
             navigator.clipboard.writeText(text).then(() => {
-                Game.showToast('Score copied to clipboard!', 'cyan');
+                Game.showToast('Combat rating copied to secure datapad!', 'cyan');
             });
         });
     </script>

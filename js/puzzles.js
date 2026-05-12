@@ -1,308 +1,214 @@
 /**
- * CYBER HEIST — Puzzle Definitions
- * 4 Missions, each with role-specific clue/task and a shared solution.
- *
- * clues[role]   — what THIS role sees
- * task[role]    — what THIS role must do / submit
- * answer        — the canonical correct answer (validated on submit)
- * points        — base points for solving
- * timeLimit     — seconds allowed for this mission
+ * OPERATION SHADOW GRID — Complete Mission & Task Definitions
+ * 3 Main Phases integrating Small Tasks, Medium Tasks, and Bonus Systems.
+ * Maximum Possible Score Per Player: 300 Points.
  */
 
 const PUZZLES = [
-    // ─── MISSION 1: Password Cracking ────────────────────────────────────────
+    // ─── PHASE 1: ENTRY OPERATION (Small Tasks) ──────────────────────────────
     {
-        id: "m1",
-        title: "MISSION 1 — SHADOW VAULT",
-        subtitle: "Crack the administrator password hash",
-        timeLimit: 150,
-        points: 300,
-        answerHash: "6e00cd562cc2d88e238dfb81d9439de7ec843ee9d0c9879d549cb1436786f975",
-        roleMergeMap: { recon: "cryptographer", cryptographer: "exploiter", exploiter: "cryptographer", defender: "exploiter" },
-        narrative: `Intercepted a password hash from the target's shadow file. Your team must identify the hash algorithm, choose the right attack strategy, and crack the hash — all while evading intrusion detection. Each agent holds a piece of the puzzle.`,
+        id: "phase1",
+        title: "PHASE 1 — ENTRY OPERATION",
+        subtitle: "Infiltrate the outer perimeter and establish secure uplink",
+        timeLimit: 300, // 5 minutes
+        points: 0, // Phase progression points are accumulated via individual sub-tasks
+        answerPlain: "entrygridsecurealpha",
+        roleMergeMap: { recon: "cryptographer", cryptographer: "exploiter", exploiter: "defender", defender: "recon" },
+        narrative: `Team infiltration initiated. Recon must scout hidden digital signals, Cryptographer decodes access barriers, Exploiter identifies perimeter vulnerabilities, and Defender locks down the checkpoint. Complete all role-specific Small Tasks to synthesize the final Phase 1 passcode.`,
 
         clues: {
             recon: {
-                label: "🔭 RECON INTEL",
+                label: "🔭 RECON SMALL TASK: Hidden Signal Hunt",
                 info: [
-                    "Target: <code>root@shadowvault.internal</code>",
-                    "Hash extracted from <code>/etc/shadow.backup</code>:",
-                    "<code>d0be2dc421be4fcd0172e5afceea3970e2f3d940</code>",
-                    "Hash length: <b>40 hex characters</b>",
-                    "Common 40-char algorithms: SHA-1, RIPEMD-160",
-                    "Admin note found: <i>'Changed to a movie-themed password last quarter'</i>",
-                    "⚠ Share the hash and algorithm clue with your Cryptographer!"
+                    "Objective: Find 3 hidden digital signals inside the outer facility.",
+                    "Activate scanner across different map zones to retrieve signal frequencies.",
+                    "Passcode Fragment 1: <code>ENTRY</code>",
+                    "⚠ Coordinate with your team to assemble the complete 4-part passcode."
                 ],
-                input: null,
-                question: "Identify the hash algorithm and relay intel to your team."
+                tasks: [
+                    { id: "sig1", title: "Find Signal 1 (Zone Alpha)", points: 10, type: "button", actionText: "Scan Zone Alpha" },
+                    { id: "sig2", title: "Find Signal 2 (Zone Bravo)", points: 10, type: "button", actionText: "Scan Zone Bravo" },
+                    { id: "sig3", title: "Find Signal 3 (Zone Charlie)", points: 10, type: "button", actionText: "Scan Zone Charlie" },
+                    { id: "report", title: "Correct Location Reporting", points: 20, type: "select", options: ["-- Select Coordinates --", "sector-7g", "vault-door-3", "ventilation-shaft"], answer: "sector-7g", penalty: 10 }
+                ]
             },
             cryptographer: {
-                label: "🔐 CRYPTOGRAPHER INTEL",
+                label: "🔐 CRYPTO SMALL TASK: Cipher Decode",
                 info: [
-                    "You have a partial wordlist from a recovered USB drive:",
-                    "<code>sunshine, dragon, phantom, shadow, letmein, qwerty, maverick, cipher, oracle, nebula</code>",
-                    "⚠ This list is INCOMPLETE — the correct password may NOT be here.",
-                    "Secondary wordlist recovered from admin's browser history:",
-                    "<code>reboot, kernel, matrix, binary, trojan, daemon</code>",
-                    "You need the hash + algorithm from Recon to crack it.",
-                    "SHA-1 hash generator: hash each word and compare to the intercepted hash."
+                    "Objective: Decode an encrypted access message to clear the datalines.",
+                    "Encrypted string intercepted: <code>KHOOR</code>",
+                    "Hint: Caesar Cipher Shift by <b>3</b>",
+                    "Passcode Fragment 2: <code>GRID</code>",
+                    "⚠ Relay your fragment to the team channel immediately."
                 ],
-                input: "text",
-                placeholder: "Enter the cracked password...",
-                question: "Hash each wordlist entry with the correct algorithm. Submit the matching password."
+                tasks: [
+                    { id: "decode", title: "Decrypt Access Message", points: 30, type: "text", placeholder: "Shift by 3: KHOOR -> ?", answer: "hello", penalty: 15 },
+                    { id: "time_limit", title: "Complete Under Time Limit", points: 20, type: "button", actionText: "Verify Time Precision" }
+                ]
             },
             exploiter: {
-                label: "⚔️ EXPLOITER INTEL",
+                label: "⚔️ EXPLOIT SMALL TASK: Weak Point Discovery",
                 info: [
-                    "Available attack vectors:",
-                    "• <b>Dictionary attack</b> — fast, requires wordlist from Cryptographer",
-                    "• <b>Brute force</b> — exhaustive, extremely slow (days for 6+ chars)",
-                    "• <b>Rainbow table</b> — precomputed, works for MD5 & SHA-1 only",
-                    "• <b>Hybrid</b> — dictionary + rules (slow setup)",
-                    "Intel from Recon says the hash is 40 chars — which attacks support that algorithm?",
-                    "⚠ Wrong attack = wasted time. Coordinate before selecting!"
+                    "Objective: Find a vulnerability inside the facility security system.",
+                    "Scan perimeter firewall layers to identify exploitable entry nodes.",
+                    "Passcode Fragment 3: <code>SECURE</code>",
+                    "⚠ Share your passcode fragment to construct the final bypass sequence."
                 ],
-                input: "select",
-                options: ["dictionary", "bruteforce", "rainbow", "hybrid"],
-                question: "Select the optimal attack method based on team intel."
+                tasks: [
+                    { id: "vuln", title: "Identify Vulnerability", points: 20, type: "select", options: ["-- Scan Target --", "port-22-ssh", "sql-auth-bypass", "buffer-overflow"], answer: "sql-auth-bypass", penalty: 15 },
+                    { id: "method", title: "Select Correct Exploit Method", points: 30, type: "select", options: ["-- Select Method --", "injection-payload", "brute-force", "ddos-flood"], answer: "injection-payload", penalty: 15 }
+                ]
             },
             defender: {
-                label: "🛡️ DEFENDER INTEL",
+                label: "🛡️ DEFENDER SMALL TASK: Checkpoint Security",
                 info: [
-                    "⚠ IDS ALERT: Hash lookup rate exceeding threshold",
-                    "Current rate: <code>12 lookups/sec</code> — limit is <code>5/sec</code>",
-                    "If IDS triggers, team loses <b>150 points</b> penalty!",
-                    "You must deploy decoy traffic to mask the real lookups.",
-                    "Decoy strategy: Flood with fake MD5 hashes on port 8443",
-                    "⚠ Deploy BEFORE Cryptographer submits — timing is critical!",
-                    "Coordinate with your team via Intel Chat."
+                    "Objective: Protect a critical checkpoint from incoming counter-attacks.",
+                    "Reinforce barrier integrity to prevent detection spikes during entry.",
+                    "Passcode Fragment 4: <code>ALPHA</code>",
+                    "⚠ Combine all 4 fragments: Recon + Crypto + Exploit + Defender."
                 ],
-                input: "button",
-                buttonLabel: "🛡️ Deploy Decoy Traffic",
-                question: "Deploy decoy hashes to mask your team's cracking attempt. Act BEFORE submission!"
+                tasks: [
+                    { id: "secure", title: "Secure Checkpoint", points: 25, type: "button", actionText: "Deploy Firewall Shield" },
+                    { id: "prevent", title: "Prevent All Breaches", points: 25, type: "button", actionText: "Engage Threat Monitor" }
+                ]
             }
         }
     },
 
-    // ─── MISSION 2: Encoded Communication ────────────────────────────────────
+    // ─── PHASE 2: CORE FACILITY (Medium Tasks) ───────────────────────────────
     {
-        id: "m2",
-        title: "MISSION 2 — DEAD DROP",
-        subtitle: "Decode the intercepted communication",
-        timeLimit: 130,
-        points: 350,
-        answerHash: "f0ffdb82123e5301e5b63e3bcac831d64f108b58919b84786f9f093fcbe995bf",
-        roleMergeMap: { recon: "cryptographer", cryptographer: "exploiter", exploiter: "cryptographer", defender: "recon" },
-        narrative: `An enemy operative split a classified passphrase across 4 covert channels, each using a different encoding method. Every team member intercepts ONE fragment. No single agent can solve this alone — you must decode your piece, share it via Intel Chat, and reconstruct the full passphrase.`,
+        id: "phase2",
+        title: "PHASE 2 — CORE FACILITY",
+        subtitle: "Navigate internal defenses and access the restricted control center",
+        timeLimit: 300, // 5 minutes
+        points: 0,
+        answerPlain: "corevaultbreachdelta",
+        roleMergeMap: { recon: "cryptographer", cryptographer: "exploiter", exploiter: "defender", defender: "recon" },
+        narrative: `Core facility breached. Recon initiates full surveillance mapping, Cryptographer transmits classified data relays, Exploiter executes multi-step system overrides, and Defender repels heavy server counter-attacks. Every task step is crucial for team survival.`,
 
         clues: {
             recon: {
-                label: "🔭 RECON — CHANNEL ALPHA",
+                label: "🔭 RECON MEDIUM TASK: Surveillance Mapping",
                 info: [
-                    "Intercepted raw packet on frequency 142.7 MHz:",
-                    "<code>47 48 4F 53 54</code>",
-                    "Encoding detected: <b>Hexadecimal (ASCII)</b>",
-                    "Each pair = one ASCII character (e.g. 41 = 'A')",
-                    "Your segment: characters <b>1–5</b> of the passphrase",
-                    "⚠ You MUST share your decoded fragment — others can't see it!",
-                    "Reminder: 47=G? 48=H? Work it out and post in Intel Chat."
+                    "Objective: Create a full tactical map of the core facility.",
+                    "Identify patrol routes, mark secure paths, and map hidden entry points.",
+                    "Core Fragment 1: <code>CORE</code>",
+                    "⚠ Keep team updated on active camera sweep zones."
                 ],
-                input: "text",
-                placeholder: "Enter your decoded segment...",
-                question: "Decode the hex bytes to ASCII letters. Share result with team."
+                tasks: [
+                    { id: "patrol", title: "Detect Patrol Routes", points: 25, type: "button", actionText: "Map Patrol Routes" },
+                    { id: "safe_paths", title: "Mark Safe Paths", points: 25, type: "button", actionText: "Highlight Safe Paths" },
+                    { id: "cameras", title: "Identify Camera Zones", points: 25, type: "select", options: ["-- Select Zone --", "server-room-a", "hallway-b", "cafeteria"], answer: "server-room-a", penalty: 10 },
+                    { id: "hidden_ent", title: "Discover Hidden Entrances", points: 25, type: "text", placeholder: "Enter hidden shaft code (hint: vent)...", answer: "vent", penalty: 10 }
+                ]
             },
             cryptographer: {
-                label: "🔐 CRYPTO — CHANNEL BRAVO",
+                label: "🔐 CRYPTO MEDIUM TASK: Secure Data Relay",
                 info: [
-                    "Intercepted Base64-encoded packet:",
-                    "<code>UFJPVE9DT0w=</code>",
-                    "Encoding: <b>Base64 → ASCII</b>",
-                    "Your segment: the <b>LAST 8 characters</b> of the passphrase",
-                    "⚠ Base64 uses A-Z, a-z, 0-9, +, / and = for padding.",
-                    "Decode carefully — one wrong letter breaks the passphrase!",
-                    "Post your decoded result in Intel Chat immediately."
+                    "Objective: Transmit classified mission data securely across three terminals.",
+                    "Establish multi-layer encryption passcodes to prevent interception.",
+                    "Core Fragment 2: <code>VAULT</code>",
+                    "⚠ Broadcast your passcode piece to complete the relay link."
                 ],
-                input: "text",
-                placeholder: "Enter decoded Base64...",
-                question: "Decode the Base64 string and share your segment via Intel Chat."
+                tasks: [
+                    { id: "term1", title: "Decode Terminal 1", points: 10, type: "button", actionText: "Decrypt Terminal 1" },
+                    { id: "term2", title: "Decode Terminal 2", points: 10, type: "button", actionText: "Decrypt Terminal 2" },
+                    { id: "term3", title: "Decode Terminal 3", points: 10, type: "button", actionText: "Decrypt Terminal 3" },
+                    { id: "passcode", title: "Create Secure Passcode", points: 30, type: "text", placeholder: "Enter passcode (hint: cipher)...", answer: "cipher", penalty: 15 },
+                    { id: "transmit", title: "Complete Secure Transmission", points: 40, type: "button", actionText: "Transmit Classified Data" }
+                ]
             },
             exploiter: {
-                label: "⚔️ EXPLOIT — CHANNEL CHARLIE",
+                label: "⚔️ EXPLOIT MEDIUM TASK: System Breach Operation",
                 info: [
-                    "Intercepted network traffic (partial passphrase assembly):",
-                    "Your role: <b>ASSEMBLE the full passphrase</b> from all segments.",
-                    "Expected format: one continuous word, ALL CAPS, no spaces.",
-                    "Recon has the FIRST segment. Crypto has the LAST segment.",
-                    "⚠ Wait for ALL teammates to share before submitting!",
-                    "The passphrase references a famous spy movie operation.",
-                    "Total length: <b>13 characters</b>"
+                    "Objective: Access the highly restricted central control core.",
+                    "Chain multiple vulnerabilities to force open the primary heavy gates.",
+                    "Core Fragment 3: <code>BREACH</code>",
+                    "⚠ Verify all firewall blocks are cleared before gate execution."
                 ],
-                input: "text",
-                placeholder: "Enter the full assembled passphrase...",
-                question: "Collect all decoded segments from your team. Assemble and submit the full passphrase."
+                tasks: [
+                    { id: "vuln1", title: "Find Vulnerability 1", points: 15, type: "button", actionText: "Scan Core DB" },
+                    { id: "vuln2", title: "Find Vulnerability 2", points: 15, type: "button", actionText: "Scan Internal API" },
+                    { id: "disable_def", title: "Disable Defense System", points: 30, type: "button", actionText: "Override Defense Grid" },
+                    { id: "unlock_gate", title: "Unlock Restricted Gate", points: 40, type: "select", options: ["-- Select Gate --", "gate-alpha", "core-gate-override", "maintenance-hatch"], answer: "core-gate-override", penalty: 15 }
+                ]
             },
             defender: {
-                label: "🛡️ DEFENDER — CHANNEL DELTA",
+                label: "🛡️ DEFENDER MEDIUM TASK: Counterattack Response",
                 info: [
-                    "⚠ COUNTER-INTELLIGENCE ALERT:",
-                    "Enemy monitoring detected on channels Alpha through Charlie.",
-                    "If team transmits decoded segments without cover, intercept risk: <b>HIGH</b>",
-                    "You must activate signal jamming BEFORE teammates share decoded text.",
-                    "Jamming window: <b>45 seconds</b> after activation",
-                    "⚠ If you DON'T jam, team loses <b>100 bonus points</b>!",
-                    "Coordinate timing with your team in Intel Chat."
+                    "Objective: Defend the main server during active enemy attack waves.",
+                    "Reinforce barrier nodes and ensure central processing health stays above 60%.",
+                    "Core Fragment 4: <code>DELTA</code>",
+                    "⚠ Post the final phase passcode assembly format in Intel Chat."
                 ],
-                input: "button",
-                buttonLabel: "📡 Activate Signal Jammer",
-                question: "Jam enemy surveillance before your team shares decoded intel. Timing is everything!"
+                tasks: [
+                    { id: "detect_src", title: "Detect Attack Source", points: 25, type: "button", actionText: "Trace Enemy IP" },
+                    { id: "reinforce", title: "Reinforce Defenses", points: 35, type: "button", actionText: "Boost Defense Barriers" },
+                    { id: "server_health", title: "Maintain Server Health > 60%", points: 40, type: "button", actionText: "Execute Emergency Recovery" }
+                ]
             }
         }
     },
 
-    // ─── MISSION 3: SQL Injection ─────────────────────────────────────────────
+    // ─── PHASE 3: EXTRACTION (Bonus Systems & Escape) ────────────────────────
     {
-        id: "m3",
-        title: "MISSION 3 — DATABASE BREACH",
-        subtitle: "Bypass the admin login via SQL injection",
-        timeLimit: 130,
-        points: 400,
-        answerHash: "39a043f5f5b6d2564dbf55bf07470dc30a3da1a7cd322f26ed612efcd68da2b1",
-        roleMergeMap: { recon: "cryptographer", cryptographer: "exploiter", exploiter: "cryptographer", defender: "exploiter" },
-        narrative: `Your team has located a login portal on the target server. Error messages suggest the backend uses raw SQL queries without parameterization. Build an injection payload from scattered recon data — but watch out for the Web Application Firewall.`,
+        id: "phase3",
+        title: "PHASE 3 — EXTRACTION",
+        subtitle: "Secure extraction routes and finalize operational extraction",
+        timeLimit: 240, // 4 minutes
+        points: 0,
+        answerPlain: "shadowgridescapevictory",
+        roleMergeMap: { recon: "cryptographer", cryptographer: "exploiter", exploiter: "defender", defender: "recon" },
+        narrative: `Extraction protocol active. Claim your role-specific Bonus Points by achieving flawless tactical execution under extreme time pressure. Combine the final escape passcode pieces to successfully conclude Operation Shadow Grid.`,
 
         clues: {
             recon: {
-                label: "🔭 RECON INTEL",
+                label: "🔭 RECON BONUS SYSTEM",
                 info: [
-                    "Target: <code>https://shadowvault.internal/admin/login</code>",
-                    "Method: <code>POST</code> | Params: <code>username</code>, <code>password</code>",
-                    "Error message leaked:",
-                    "<code>MySQL Error: You have an error in your SQL syntax near '''</code>",
-                    "Backend confirmed: <b>MySQL 5.7</b> (no prepared statements)",
-                    "Server-side query pattern (deduced from error):",
-                    "<code>SELECT * FROM users WHERE user='[INPUT]' AND pass='[INPUT]'</code>",
-                    "⚠ Tell your Cryptographer: the input is wrapped in <b>single quotes</b>!"
+                    "Claim operational proficiency rewards for flawless reconnaissance.",
+                    "Final Passcode Piece 1: <code>SHADOW</code>"
                 ],
-                input: null,
-                question: "Analyze the SQL pattern and share the injection context with your team."
+                tasks: [
+                    { id: "no_mistakes", title: "No Incorrect Reports", points: 15, type: "button", actionText: "Verify Clean Reports" },
+                    { id: "fast_map", title: "Fastest Mapping Completion", points: 10, type: "button", actionText: "Claim Speed Bonus" },
+                    { id: "stealth", title: "Avoid All Enemy Detection", points: 25, type: "button", actionText: "Engage Stealth Escape" }
+                ]
             },
             cryptographer: {
-                label: "🔐 CRYPTOGRAPHER INTEL",
+                label: "🔐 CRYPTO BONUS SYSTEM",
                 info: [
-                    "Old pentest report recovered (partially redacted):",
-                    "Payload structure: <code>[ESCAPE][LOGIC][BALANCE]</code>",
-                    "Fragment ESCAPE: <code>'</code> — closes the existing quote",
-                    "Fragment LOGIC: one of these operators makes the query always-true:",
-                    "<code>AND, OR, NOT, XOR</code>",
-                    "Fragment BALANCE: <code>'1'='1</code> — re-opens/closes quotes",
-                    "Full pattern: <code>[ESCAPE] [OPERATOR] [BALANCE]</code>",
-                    "⚠ You need Recon's intel on quote context + Defender's WAF rules to pick the right operator!"
+                    "Claim rewards for rapid transmission speeds and flawless logic execution.",
+                    "Final Passcode Piece 2: <code>GRID</code>"
                 ],
-                input: "text",
-                placeholder: "Assemble: escape + operator + balance...",
-                question: "Build the injection payload. Use intel from Recon (SQL context) and Defender (WAF rules)."
+                tasks: [
+                    { id: "no_mistakes", title: "No Decryption Mistakes", points: 15, type: "button", actionText: "Audit Decryption Logs" },
+                    { id: "prevent_int", title: "Prevent Enemy Interception", points: 10, type: "button", actionText: "Activate Signal Scrambler" },
+                    { id: "fast_trans", title: "Fastest Secure Transmission", points: 25, type: "button", actionText: "Finalize High-Speed Relay" }
+                ]
             },
             exploiter: {
-                label: "⚔️ EXPLOITER INTEL",
+                label: "⚔️ EXPLOIT BONUS SYSTEM",
                 info: [
-                    "Injection target field: <code>password</code> parameter",
-                    "You will submit the final payload to the server.",
-                    "Requirements for a successful bypass:",
-                    "1. Must escape the existing string context (ask Recon)",
-                    "2. Must create an always-TRUE condition",
-                    "3. Must not trigger WAF signatures (ask Defender)",
-                    "⚠ Get the assembled payload from your Cryptographer!",
-                    "Double-check: does the payload have balanced quotes?"
+                    "Claim maximum impact rewards for zero alarm triggers and perfect exploit chains.",
+                    "Final Passcode Piece 3: <code>ESCAPE</code>"
                 ],
-                input: "text",
-                placeholder: "Paste the final injection payload...",
-                question: "Submit the SQL injection payload. Coordinate with Cryptographer for the exact string."
+                tasks: [
+                    { id: "no_alarms", title: "No Alarms Triggered", points: 15, type: "button", actionText: "Verify Silent Execution" },
+                    { id: "quick_breach", title: "Complete Breach Quickly", points: 10, type: "button", actionText: "Claim Rapid Override" },
+                    { id: "perfect_chain", title: "Perfect Exploit Chain", points: 25, type: "button", actionText: "Execute Perfect Chain" }
+                ]
             },
             defender: {
-                label: "🛡️ DEFENDER INTEL",
+                label: "🛡️ DEFENDER BONUS SYSTEM",
                 info: [
-                    "WAF Analysis — Blocked signatures:",
-                    "❌ <code>UNION SELECT</code> — BLOCKED (signature #4401)",
-                    "❌ <code>DROP TABLE</code> — BLOCKED (signature #4402)",
-                    "❌ <code>AND 1=1</code> — BLOCKED (signature #4407)",
-                    "❌ <code>; --</code> — BLOCKED (comment injection)",
-                    "✅ <code>OR</code> conditions — <b>NOT in blocklist</b>",
-                    "✅ String comparisons like <code>'x'='x'</code> — allowed",
-                    "⚠ Tell Cryptographer to use <b>OR</b>, not AND!",
-                    "Suppress WAF logs BEFORE the Exploiter submits!"
+                    "Claim defensive honors for perfect server integrity and ultimate wave survival.",
+                    "Final Passcode Piece 4: <code>VICTORY</code>"
                 ],
-                input: "button",
-                buttonLabel: "🔒 Suppress WAF Logs",
-                question: "Share safe operators with Cryptographer, then suppress WAF before Exploiter submits."
-            }
-        }
-    },
-
-    // ─── MISSION 4: Port Scan & Exploit ──────────────────────────────────────
-    {
-        id: "m4",
-        title: "MISSION 4 — FINAL BREACH",
-        subtitle: "Identify the open port and exploit the vulnerability",
-        timeLimit: 90,
-        points: 450,
-        answerHash: "785f3ec7eb32f30b90cd0fcf3657d388b5ff4297f2f9716ff66e9b69c05ddd09",
-        roleMergeMap: { recon: "cryptographer", cryptographer: "exploiter", exploiter: "cryptographer", defender: "exploiter" },
-        narrative: `Final barrier. One service has a known vulnerability. The recon scan
-      returns open ports — find which one is exploitable and extract the root flag.`,
-
-        clues: {
-            recon: {
-                label: "🔭 PORT SCAN RESULTS",
-                info: [
-                    "<b>nmap -sV 10.0.0.1</b>",
-                    "<code>PORT     STATE  SERVICE  VERSION</code>",
-                    "<code>22/tcp   open   ssh      OpenSSH 7.2</code>",
-                    "<code>80/tcp   open   http     Apache 2.4.18</code>",
-                    "<code>443/tcp  closed https    -</code>",
-                    "<code>3306/tcp closed mysql    -</code>",
-                    "CVE-2016-6515 affects OpenSSH 7.2 (DoS + auth bypass)"
-                ],
-                input: null,
-                question: "Report all open ports and the vulnerable service to your team."
-            },
-            cryptographer: {
-                label: "🔐 SERVICE BANNER",
-                info: [
-                    "Banner grabbed from target (Base64):",
-                    "<code>U1NILTIuMC1PcGVuU1NIXzcuMg==</code>",
-                    "Decode to confirm the exact service version.",
-                    "Decoded = <b>SSH-2.0-OpenSSH_7.2</b>",
-                    "CVE lookup: OpenSSH 7.2 → CVE-2016-6515"
-                ],
-                input: "text",
-                placeholder: "Decode the banner and enter version...",
-                question: "Decode the banner, confirm version, report to team."
-            },
-            exploiter: {
-                label: "⚔️ EXPLOIT SELECTION",
-                info: [
-                    "Available exploits:",
-                    "• Port 22 — OpenSSH 7.2 (CVE-2016-6515) <b>CRITICAL</b>",
-                    "• Port 80 — Apache 2.4.18 (info disclosure only)",
-                    "• Port 443 — CLOSED",
-                    "Your Recon has the scan results. Select the right port!"
-                ],
-                input: "select",
-                options: ["80", "22", "443", "3306"],
-                question: "Select the port number with the exploitable vulnerability."
-            },
-            defender: {
-                label: "🛡️ IDS SUPPRESSION",
-                info: [
-                    "IDS TRIGGERED: SSH brute-force pattern detected",
-                    "Alert severity: HIGH",
-                    "Time to suppress: <b>Act before Exploiter submits!</b>",
-                    "Method: Flood decoy SSH packets on port 2222",
-                    "Status: <span id='ids-status'>ARMED</span>"
-                ],
-                input: "button",
-                buttonLabel: "Flood Decoy Port 2222",
-                question: "Suppress IDS before exploit is launched."
+                tasks: [
+                    { id: "zero_dmg", title: "Zero System Damage", points: 15, type: "button", actionText: "Certify Intact Server" },
+                    { id: "fast_resp", title: "Fastest Threat Response", points: 10, type: "button", actionText: "Claim Quick Reaction" },
+                    { id: "survive_waves", title: "Survive All Attack Waves", points: 25, type: "button", actionText: "Trigger Final Lockdown" }
+                ]
             }
         }
     }

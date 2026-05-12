@@ -1,26 +1,16 @@
 /**
- * CYBER HEIST — Firebase Realtime Database Backend
- * Full cross-device multiplayer — works on GitHub Pages.
- *
- * HOW TO SET UP (takes ~5 minutes):
- * 1. Go to https://console.firebase.google.com/
- * 2. Click "Add project" → give it a name → Create
- * 3. In your project: Build → Realtime Database → Create Database
- *    → Start in TEST MODE → Done
- * 4. Go to Project Settings (gear icon) → Your apps → </> Web
- * 5. Register app → copy the firebaseConfig object
- * 6. Paste your values into the FIREBASE CONFIG block below
- * ─────────────────────────────────────────────────────────────
+ * OPERATION SHADOW GRID — Firebase Realtime Database Backend
+ * Full cross-device multiplayer & local fallback synchronization.
  */
 
 import { FIREBASE_READY, db } from "./firebase-config.js";
 
 // ── Role Definitions ────────────────────────────────────────────
 const ROLES = {
-    recon: { name: "RECON", icon: "🔭", desc: "Find hidden intel" },
-    cryptographer: { name: "CRYPTOGRAPHER", icon: "🔐", desc: "Break the codes" },
-    exploiter: { name: "EXPLOITER", icon: "⚔️", desc: "Launch the attack" },
-    defender: { name: "DEFENDER", icon: "🛡️", desc: "Manage detection" }
+    recon: { name: "RECON", icon: "🔭", desc: "Scouting & hidden paths" },
+    cryptographer: { name: "CRYPTOGRAPHER", icon: "🔐", desc: "Logic-based cyber puzzles" },
+    exploiter: { name: "EXPLOITER", icon: "⚔️", desc: "Vulnerabilities & breach" },
+    defender: { name: "DEFENDER", icon: "🛡️", desc: "Protection & server defense" }
 };
 
 let currentRoom = null;
@@ -63,12 +53,12 @@ function _setupBC(code) {
     _bc.onmessage = e => { if (e.data?.roomCode === code) _fireCbs(e.data.type, code); };
     window.addEventListener('storage', e => {
         if (e.key === _localRoomKey(code))
-            ['players_update', 'game_state', 'chat_update'].forEach(t => _fireCbs(t, code));
+            ['players_update', 'game_state', 'chat_update', 'mission_change'].forEach(t => _fireCbs(t, code));
     });
 }
 
 // ─────────────────────────────────────────────────────────────────
-//  PUBLIC API — same interface regardless of Firebase or local mode
+//  PUBLIC API
 // ─────────────────────────────────────────────────────────────────
 
 async function createRoom(username, role) {
@@ -82,8 +72,15 @@ async function createRoom(username, role) {
         gameState: 'lobby',
         currentMission: 0,
         missionStartAt: now,
+        teamBonuses: {
+            smallTasks: false,
+            mediumTasks: false,
+            missionSuccess: false,
+            perfectMission: true, // Remains true unless an alarm/failure occurs
+            timeBonus: 0
+        },
         players: {
-            [playerId]: { username, role, score: 0, joined: now, solved: {} }
+            [playerId]: { username, role, score: 0, joined: now, solved: {}, tasksCompleted: {} }
         }
     };
 
@@ -112,7 +109,7 @@ async function joinRoom(roomCode, username, role) {
 
         const playerId = genPlayerId();
         await roomRef(roomCode).child(`players/${playerId}`).set({
-            username, role, score: 0, joined: Date.now(), solved: {}
+            username, role, score: 0, joined: Date.now(), solved: {}, tasksCompleted: {}
         });
         currentRoom = roomCode;
         currentPlayer = { id: playerId, username, role, isHost: false };
@@ -124,10 +121,11 @@ async function joinRoom(roomCode, username, role) {
         if (taken.includes(role)) throw new Error(`Role "${role}" is already taken!`);
 
         const playerId = genPlayerId();
-        room.players[playerId] = { username, role, score: 0, joined: Date.now(), solved: {} };
+        room.players[playerId] = { username, role, score: 0, joined: Date.now(), solved: {}, tasksCompleted: {} };
         _writeLocal(roomCode, room);
         _setupBC(roomCode);
         _localBroadcast('players_update', roomCode);
+        _localBroadcast('mission_change', roomCode);
 
         currentRoom = roomCode;
         currentPlayer = { id: playerId, username, role, isHost: false };
@@ -158,6 +156,7 @@ async function startGame() {
         if (!room) return;
         _writeLocal(currentRoom, { ...room, ...update });
         _localBroadcast('game_state', currentRoom);
+        _localBroadcast('mission_change', currentRoom);
     }
 }
 
@@ -172,8 +171,40 @@ async function broadcastScore(delta) {
         const p = room.players[currentPlayer.id];
         if (!p) return;
         p.score = (p.score || 0) + delta;
+        // Keep points non-negative or allow penalties to drop score
         _writeLocal(currentRoom, room);
         _localBroadcast('players_update', currentRoom);
+        _localBroadcast('mission_change', currentRoom);
+    }
+}
+
+async function markTaskCompleted(phaseId, taskId) {
+    const taskKey = `${phaseId}_${taskId}`;
+    if (FIREBASE_READY && db) {
+        await roomRef(currentRoom).child(`players/${currentPlayer.id}/tasksCompleted/${taskKey}`).set(true);
+    } else {
+        const room = _readLocal(currentRoom);
+        if (!room || !currentPlayer) return;
+        const p = room.players[currentPlayer.id];
+        if (!p) return;
+        if (!p.tasksCompleted) p.tasksCompleted = {};
+        p.tasksCompleted[taskKey] = true;
+        _writeLocal(currentRoom, room);
+        _localBroadcast('players_update', currentRoom);
+        _localBroadcast('mission_change', currentRoom);
+    }
+}
+
+async function updateTeamBonus(bonusKey, val) {
+    if (FIREBASE_READY && db) {
+        await roomRef(currentRoom).child(`teamBonuses/${bonusKey}`).set(val);
+    } else {
+        const room = _readLocal(currentRoom);
+        if (!room) return;
+        if (!room.teamBonuses) room.teamBonuses = {};
+        room.teamBonuses[bonusKey] = val;
+        _writeLocal(currentRoom, room);
+        _localBroadcast('mission_change', currentRoom);
     }
 }
 
@@ -188,6 +219,7 @@ async function markSolved(missionId) {
         if (!p.solved) p.solved = {};
         p.solved[missionId] = true;
         _writeLocal(currentRoom, room);
+        _localBroadcast('mission_change', currentRoom);
     }
 }
 
@@ -200,6 +232,7 @@ async function advanceMission(missionIndex) {
         if (!room) return;
         _writeLocal(currentRoom, { ...room, ...update });
         _localBroadcast('game_state', currentRoom);
+        _localBroadcast('mission_change', currentRoom);
     }
 }
 
@@ -212,6 +245,7 @@ async function endGame() {
         room.gameState = 'ended';
         _writeLocal(currentRoom, room);
         _localBroadcast('game_state', currentRoom);
+        _localBroadcast('mission_change', currentRoom);
     }
 }
 
@@ -259,6 +293,8 @@ function onMissionChange(callback) {
         roomRef(currentRoom).on('value', snap => { const d = snap.val(); if (d) callback(d); });
     } else {
         _onLocal('game_state', room => { if (room) callback(room); });
+        _onLocal('mission_change', room => { if (room) callback(room); });
+        _onLocal('players_update', room => { if (room) callback(room); });
         const room = _readLocal(currentRoom);
         if (room) callback(room);
     }
@@ -306,10 +342,8 @@ function clearSession() {
     if (_bc) { try { _bc.close(); } catch { } _bc = null; }
 }
 
-// Expose readRoom for game.js host-check (local fallback)
 function readRoom(code) { return _readLocal(code); }
 
-// ── Expose banner on page ────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
     const el = document.getElementById('nav-status');
     if (el) {
@@ -322,12 +356,11 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
-// ── Active Roles Helper ─────────────────────────────────────────
+
 function getActiveRoles() {
     const code = currentRoom;
     if (!code) return [];
     if (FIREBASE_READY && db) {
-        // For Firebase, we cache players from the last onPlayersUpdate callback
         return _cachedActiveRoles || [];
     } else {
         const room = _readLocal(code);
@@ -339,6 +372,7 @@ let _cachedActiveRoles = [];
 
 export const Lobby = {
     ROLES, createRoom, joinRoom, startGame, broadcastScore, markSolved,
+    markTaskCompleted, updateTeamBonus,
     advanceMission, endGame, sendIntelMessage,
     onPlayersUpdate, onGameStateChange, onMissionChange, onIntelMessages,
     getTakenRoles, restoreSession, clearSession, readRoom, getActiveRoles,
