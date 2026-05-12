@@ -215,104 +215,138 @@
   <div id="toast-container"></div>
 
   <!-- ── Script Interoperability Layer ────────────────────────────── -->
-  <script type="module">
-    import { Lobby } from "./js/lobby.js";
-    
+  <script>
+    // Global reference to Lobby loaded via module script
+    window.LobbyModule = null;
+
     // ── Selected Role ──────────────────────────────────────────────
     let createRole = null;
     let joinRole = null;
 
     function setupRoleGrid(gridId, onSelect) {
       const grid = document.getElementById(gridId);
+      if (!grid) return;
       grid.querySelectorAll('.role-card').forEach(card => {
         card.addEventListener('click', () => {
           if (card.classList.contains('taken')) return;
           grid.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
           card.classList.add('selected');
-          // Add attribute for clean CSS glow targeting
           card.dataset.roleSelected = card.dataset.role;
           onSelect(card.dataset.role);
         });
       });
     }
 
-    setupRoleGrid('create-role-grid', r => createRole = r);
-    setupRoleGrid('join-role-grid', r => joinRole = r);
+    window.addEventListener('DOMContentLoaded', () => {
+      setupRoleGrid('create-role-grid', r => createRole = r);
+      setupRoleGrid('join-role-grid', r => joinRole = r);
 
-    // ── Modal Toggles ──────────────────────────────────────────────
-    document.getElementById('btn-create').onclick = () => {
-      document.getElementById('modal-create').classList.remove('hidden');
-    };
-    document.getElementById('btn-join').onclick = () => {
-      document.getElementById('modal-join').classList.remove('hidden');
-    };
-    document.getElementById('create-cancel-btn').onclick = () => {
-      document.getElementById('modal-create').classList.add('hidden');
-    };
-    document.getElementById('join-cancel-btn').onclick = () => {
-      document.getElementById('modal-join').classList.add('hidden');
-    };
-
-    // ── Create Room ─────────────────────────────────────────────────
-    document.getElementById('create-submit-btn').onclick = async () => {
-      const username = document.getElementById('create-username').value.trim();
-      const errEl = document.getElementById('create-error');
-
-      if (!username) { errEl.textContent = '⚠ Enter a codename'; return; }
-      if (!createRole) { errEl.textContent = '⚠ Assign a combat role'; return; }
-      errEl.textContent = '';
-
-      const btn = document.getElementById('create-submit-btn');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span>';
-
-      try {
-        const code = await Lobby.createRoom(username, createRole);
+      // ── Modal Toggles ──────────────────────────────────────────────
+      document.getElementById('btn-create').onclick = () => {
+        document.getElementById('modal-create').classList.remove('hidden');
+      };
+      document.getElementById('btn-join').onclick = () => {
+        document.getElementById('modal-join').classList.remove('hidden');
+      };
+      document.getElementById('create-cancel-btn').onclick = () => {
         document.getElementById('modal-create').classList.add('hidden');
-        enterLobby(code, true);
-      } catch (e) {
-        errEl.textContent = '⚠ ' + e.message;
-        btn.disabled = false;
-        btn.innerHTML = '<span>CREATE ROOM</span>';
+      };
+      document.getElementById('join-cancel-btn').onclick = () => {
+        document.getElementById('modal-join').classList.add('hidden');
+      };
+
+      // ── Direct URL Intercept ────────────────────────────────────────
+      const urlParams = new URLSearchParams(window.location.search);
+      const autoCode = urlParams.get('room');
+      if (autoCode) {
+        document.getElementById('join-code').value = autoCode.toUpperCase();
+        document.getElementById('modal-join').classList.remove('hidden');
       }
-    };
 
-    // ── Join Room ───────────────────────────────────────────────────
-    document.getElementById('join-submit-btn').onclick = async () => {
-      const code = document.getElementById('join-code').value.trim().toUpperCase();
-      const username = document.getElementById('join-username').value.trim();
-      const errEl = document.getElementById('join-error');
+      // ── Create Room ─────────────────────────────────────────────────
+      document.getElementById('create-submit-btn').onclick = async () => {
+        const username = document.getElementById('create-username').value.trim();
+        const errEl = document.getElementById('create-error');
 
-      if (!code) { errEl.textContent = '⚠ Enter the room access code'; return; }
-      if (!username) { errEl.textContent = '⚠ Enter a codename'; return; }
-      if (!joinRole) { errEl.textContent = '⚠ Assign a combat role'; return; }
-      errEl.textContent = '';
+        if (!username) { errEl.textContent = '⚠ Enter a codename'; return; }
+        if (!createRole) { errEl.textContent = '⚠ Assign a combat role'; return; }
+        errEl.textContent = '';
 
-      try {
-        const taken = await Lobby.getTakenRoles(code);
-        if (taken.includes(joinRole)) {
-          errEl.textContent = `⚠ Role specialization already taken. Choose another.`;
-          document.getElementById('join-role-grid').querySelectorAll('.role-card').forEach(card => {
-            if (taken.includes(card.dataset.role)) card.classList.add('taken');
-          });
+        if (!window.LobbyModule) {
+          errEl.textContent = '⚠ Sync modules offline. If running locally via file://, please open via local server (e.g. Live Server or npm run dev).';
           return;
         }
-      } catch (e) { errEl.textContent = '⚠ ' + e.message; return; }
 
-      const btn = document.getElementById('join-submit-btn');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span>';
+        const btn = document.getElementById('create-submit-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span>';
 
-      try {
-        await Lobby.joinRoom(code, username, joinRole);
-        document.getElementById('modal-join').classList.add('hidden');
-        enterLobby(code, false);
-      } catch (e) {
-        errEl.textContent = '⚠ ' + e.message;
-        btn.disabled = false;
-        btn.innerHTML = '<span>JOIN ROOM</span>';
-      }
-    };
+        try {
+          const code = await window.LobbyModule.createRoom(username, createRole);
+          document.getElementById('modal-create').classList.add('hidden');
+          enterLobby(code, true);
+        } catch (e) {
+          errEl.textContent = '⚠ ' + e.message;
+          btn.disabled = false;
+          btn.innerHTML = '<span>CREATE ROOM</span>';
+        }
+      };
+
+      // ── Join Room ───────────────────────────────────────────────────
+      document.getElementById('join-submit-btn').onclick = async () => {
+        const code = document.getElementById('join-code').value.trim().toUpperCase();
+        const username = document.getElementById('join-username').value.trim();
+        const errEl = document.getElementById('join-error');
+
+        if (!code) { errEl.textContent = '⚠ Enter the room access code'; return; }
+        if (!username) { errEl.textContent = '⚠ Enter a codename'; return; }
+        if (!joinRole) { errEl.textContent = '⚠ Assign a combat role'; return; }
+        errEl.textContent = '';
+
+        if (!window.LobbyModule) {
+          errEl.textContent = '⚠ Sync modules offline. If running locally via file://, please open via local server (e.g. Live Server or npm run dev).';
+          return;
+        }
+
+        try {
+          const taken = await window.LobbyModule.getTakenRoles(code);
+          if (taken.includes(joinRole)) {
+            errEl.textContent = `⚠ Role specialization already taken. Choose another.`;
+            document.getElementById('join-role-grid').querySelectorAll('.role-card').forEach(card => {
+              if (taken.includes(card.dataset.role)) card.classList.add('taken');
+            });
+            return;
+          }
+        } catch (e) { errEl.textContent = '⚠ ' + e.message; return; }
+
+        const btn = document.getElementById('join-submit-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span>';
+
+        try {
+          await window.LobbyModule.joinRoom(code, username, joinRole);
+          document.getElementById('modal-join').classList.add('hidden');
+          enterLobby(code, false);
+        } catch (e) {
+          errEl.textContent = '⚠ ' + e.message;
+          btn.disabled = false;
+          btn.innerHTML = '<span>JOIN ROOM</span>';
+        }
+      };
+
+      // ── Execution Triggers ──────────────────────────────────────────
+      document.getElementById('lobby-start-btn').onclick = async () => {
+        if (window.LobbyModule) await window.LobbyModule.startGame();
+      };
+
+      document.getElementById('lobby-leave-btn').onclick = () => {
+        if (window.LobbyModule) window.LobbyModule.clearSession();
+        document.getElementById('lobby-page').classList.add('hidden');
+        document.getElementById('landing-page').classList.remove('hidden');
+        document.getElementById('nav-status').textContent = 'OFFLINE';
+        document.getElementById('nav-room').textContent = '';
+      };
+    });
 
     // ── Lobby View Handler ───────────────────────────────────────────
     function enterLobby(code, isHost) {
@@ -328,10 +362,12 @@
         document.getElementById('lobby-start-btn').style.display = 'inline-flex';
       }
 
-      const allRoles = ['recon', 'cryptographer', 'exploiter', 'defender'];
-      const roleInfo = Lobby.ROLES;
+      if (!window.LobbyModule) return;
 
-      Lobby.onPlayersUpdate(players => {
+      const allRoles = ['recon', 'cryptographer', 'exploiter', 'defender'];
+      const roleInfo = window.LobbyModule.ROLES;
+
+      window.LobbyModule.onPlayersUpdate(players => {
         const grid = document.getElementById('players-grid');
         grid.innerHTML = '';
 
@@ -367,32 +403,22 @@
         if (startBtn) startBtn.disabled = count < 2;
       });
 
-      Lobby.onGameStateChange(state => {
+      window.LobbyModule.onGameStateChange(state => {
         if (state === 'playing') {
           window.location.href = 'game.html';
         }
       });
     }
+  </script>
 
-    // ── Execution Triggers ──────────────────────────────────────────
-    document.getElementById('lobby-start-btn').onclick = async () => {
-      await Lobby.startGame();
-    };
-
-    document.getElementById('lobby-leave-btn').onclick = () => {
-      Lobby.clearSession();
-      document.getElementById('lobby-page').classList.add('hidden');
-      document.getElementById('landing-page').classList.remove('hidden');
-      document.getElementById('nav-status').textContent = 'OFFLINE';
-      document.getElementById('nav-room').textContent = '';
-    };
-
-    // ── Direct URL Intercept ────────────────────────────────────────
-    const urlParams = new URLSearchParams(window.location.search);
-    const autoCode = urlParams.get('room');
-    if (autoCode) {
-      document.getElementById('join-code').value = autoCode.toUpperCase();
-      document.getElementById('modal-join').classList.remove('hidden');
+  <script type="module">
+    import { Lobby } from "./js/lobby.js";
+    window.LobbyModule = Lobby;
+    // If the lobby page is currently visible (e.g. hot reload or returning), initialize lobby state update
+    const activeRoom = Lobby.getRoom();
+    if (activeRoom && !document.getElementById('lobby-page').classList.contains('hidden')) {
+      const player = Lobby.getPlayer();
+      enterLobby(activeRoom, player ? player.isHost : false);
     }
   </script>
 </body>
