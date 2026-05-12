@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cyber Heist: Team Breach</title>
+  <meta name="description"
+    content="A real-time multiplayer hacking team game. Crack passwords, decode ciphers, and breach the secure system before time runs out." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+
+  <!-- ── Navbar ──────────────────────────────────────────────────── -->
+  <nav class="navbar">
+    <div class="navbar-brand">CYBER<span>HEIST</span></div>
+    <div class="flex gap-8">
+      <span class="badge badge-green" id="nav-status">OFFLINE</span>
+      <span class="mono" style="font-size:0.75rem;color:var(--text-dim)" id="nav-room"></span>
+    </div>
+  </nav>
+
+  <!-- ── Ticker ───────────────────────────────────────────────────── -->
+  <div class="ticker-wrap">
+    <div class="ticker-content">
+      <span>[ALERT]</span> ENCRYPTED TRAFFIC DETECTED &nbsp;&nbsp;&nbsp;
+      <span>[INFO]</span> SHADOW VAULT BREACH IN PROGRESS &nbsp;&nbsp;&nbsp;
+      <span>[WARN]</span> IDS SIGNATURE MISMATCH — PORT 22 &nbsp;&nbsp;&nbsp;
+      <span>[CRIT]</span> ADMIN HASH INTERCEPTED &nbsp;&nbsp;&nbsp;
+      <span>[INFO]</span> BASE64 PAYLOAD DECODED &nbsp;&nbsp;&nbsp;
+      <span>[ALERT]</span> SQL INJECTION ATTEMPT LOGGED &nbsp;&nbsp;&nbsp;
+      <span>[INFO]</span> PORT SCAN RESULTS AVAILABLE &nbsp;&nbsp;&nbsp;
+      <span>[ALERT]</span> ENCRYPTED TRAFFIC DETECTED &nbsp;&nbsp;&nbsp;
+      <span>[INFO]</span> SHADOW VAULT BREACH IN PROGRESS &nbsp;&nbsp;&nbsp;
+      <span>[WARN]</span> IDS SIGNATURE MISMATCH — PORT 22 &nbsp;&nbsp;&nbsp;
+      <span>[CRIT]</span> ADMIN HASH INTERCEPTED &nbsp;&nbsp;&nbsp;
+      <span>[INFO]</span> BASE64 PAYLOAD DECODED &nbsp;&nbsp;&nbsp;
+      <span>[ALERT]</span> SQL INJECTION ATTEMPT LOGGED &nbsp;&nbsp;&nbsp;
+      <span>[INFO]</span> PORT SCAN RESULTS AVAILABLE &nbsp;&nbsp;&nbsp;
+    </div>
+  </div>
+
+  <!-- ── Landing Page ─────────────────────────────────────────────── -->
+  <section id="landing-page">
+    <div class="hero-tag cursor">TEAM-BASED HACKING SIMULATION</div>
+    <h1 class="hero-title">CYBER<span class="accent">HEIST</span><br>TEAM BREACH</h1>
+    <p class="hero-sub">3–4 players. 4 missions. One target system. Communicate, decode, exploit.<br>Can your team
+      breach the vault before time runs out?</p>
+
+    <!-- Role preview cards -->
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:40px;max-width:720px">
+      <div class="glass" style="padding:12px 18px;text-align:center;min-width:140px">
+        <div style="font-size:1.5rem">🔭</div>
+        <div
+          style="font-family:var(--font-head);font-size:0.6rem;color:var(--green);letter-spacing:0.1em;margin-top:4px">
+          RECON</div>
+        <div style="font-size:0.72rem;color:var(--text-dim);margin-top:2px">Hunt for intel</div>
+      </div>
+      <div class="glass" style="padding:12px 18px;text-align:center;min-width:140px">
+        <div style="font-size:1.5rem">🔐</div>
+        <div
+          style="font-family:var(--font-head);font-size:0.6rem;color:var(--cyan);letter-spacing:0.1em;margin-top:4px">
+          CRYPTOGRAPHER</div>
+        <div style="font-size:0.72rem;color:var(--text-dim);margin-top:2px">Break the codes</div>
+      </div>
+      <div class="glass" style="padding:12px 18px;text-align:center;min-width:140px">
+        <div style="font-size:1.5rem">⚔️</div>
+        <div style="font-family:var(--font-head);font-size:0.6rem;color:var(--red);letter-spacing:0.1em;margin-top:4px">
+          EXPLOITER</div>
+        <div style="font-size:0.72rem;color:var(--text-dim);margin-top:2px">Launch attacks</div>
+      </div>
+      <div class="glass" style="padding:12px 18px;text-align:center;min-width:140px">
+        <div style="font-size:1.5rem">🛡️</div>
+        <div
+          style="font-family:var(--font-head);font-size:0.6rem;color:var(--yellow);letter-spacing:0.1em;margin-top:4px">
+          DEFENDER</div>
+        <div style="font-size:0.72rem;color:var(--text-dim);margin-top:2px">Beat detection</div>
+      </div>
+    </div>
+
+    <div class="landing-cards">
+      <div class="glass landing-card" id="btn-create">
+        <div class="card-icon">🚀</div>
+        <h3>CREATE ROOM</h3>
+        <p>Start a new heist. Share your code with 2–3 teammates and lead the breach.</p>
+      </div>
+      <div class="glass landing-card" id="btn-join">
+        <div class="card-icon">🔗</div>
+        <h3>JOIN ROOM</h3>
+        <p>Got a code? Jump in, pick your role, and wait for the host to launch.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Lobby Page ───────────────────────────────────────────────── -->
+  <section id="lobby-page" class="hidden">
+    <div class="lobby-header">
+      <div style="font-family:var(--font-mono);font-size:0.75rem;color:var(--text-dim);letter-spacing:0.2em">ROOM CODE
+      </div>
+      <span class="room-code-display" id="lobby-room-code">----</span>
+      <div style="font-size:0.82rem;color:var(--text-dim)">Share this code with your team</div>
+    </div>
+
+    <div class="glass" style="padding:24px;margin-bottom:24px">
+      <div
+        style="font-family:var(--font-head);font-size:0.72rem;color:var(--text-dim);letter-spacing:0.15em;margin-bottom:16px">
+        CONNECTED AGENTS</div>
+      <div class="players-grid" id="players-grid">
+        <!-- Filled dynamically -->
+      </div>
+      <div id="lobby-status"
+        style="text-align:center;font-family:var(--font-mono);font-size:0.8rem;color:var(--text-dim);margin-top:16px">
+        Waiting for players...
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <button class="btn btn-lg" id="lobby-start-btn" style="display:none">
+        <span>▶ LAUNCH HEIST</span>
+      </button>
+      <button class="btn btn-red btn-sm" id="lobby-leave-btn">
+        <span>✕ LEAVE ROOM</span>
+      </button>
+    </div>
+
+    <div style="text-align:center;margin-top:24px;font-family:var(--font-mono);font-size:0.75rem;color:var(--text-dim)">
+      ⚠️ Each role can only be claimed by one player. Minimum 2 players to start.
+    </div>
+  </section>
+
+  <!-- ── Create Room Modal ────────────────────────────────────────── -->
+  <div class="modal-overlay hidden" id="modal-create">
+    <div class="glass modal-box">
+      <h2>⚡ CREATE HEIST ROOM</h2>
+
+      <div class="form-group">
+        <label class="form-label">Agent Codename</label>
+        <input type="text" class="input" id="create-username" placeholder="e.g. gh0st, n3uro, v1per" maxlength="16" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Select Your Role</label>
+        <div class="role-grid" id="create-role-grid">
+          <div class="role-card" data-role="recon">
+            <span class="role-icon">🔭</span>
+            <div class="role-name">RECON</div>
+            <div class="role-desc">Find hidden intel</div>
+          </div>
+          <div class="role-card" data-role="cryptographer">
+            <span class="role-icon">🔐</span>
+            <div class="role-name">CRYPTOGRAPHER</div>
+            <div class="role-desc">Break the codes</div>
+          </div>
+          <div class="role-card" data-role="exploiter">
+            <span class="role-icon">⚔️</span>
+            <div class="role-name">EXPLOITER</div>
+            <div class="role-desc">Launch attacks</div>
+          </div>
+          <div class="role-card" data-role="defender">
+            <span class="role-icon">🛡️</span>
+            <div class="role-name">DEFENDER</div>
+            <div class="role-desc">Beat detection</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-error" id="create-error"></div>
+
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn btn-full" id="create-submit-btn"><span>CREATE ROOM</span></button>
+        <button class="btn btn-red btn-sm" id="create-cancel-btn"><span>✕</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Join Room Modal ──────────────────────────────────────────── -->
+  <div class="modal-overlay hidden" id="modal-join">
+    <div class="glass modal-box">
+      <h2>🔗 JOIN HEIST ROOM</h2>
+
+      <div class="form-group">
+        <label class="form-label">Room Code</label>
+        <input type="text" class="input" id="join-code" placeholder="e.g. AB3X" maxlength="4"
+          style="text-transform:uppercase;letter-spacing:0.3em;font-size:1.2rem;text-align:center" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Agent Codename</label>
+        <input type="text" class="input" id="join-username" placeholder="e.g. zr0, h4x0r" maxlength="16" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Select Your Role</label>
+        <div class="role-grid" id="join-role-grid">
+          <div class="role-card" data-role="recon">
+            <span class="role-icon">🔭</span>
+            <div class="role-name">RECON</div>
+            <div class="role-desc">Find hidden intel</div>
+          </div>
+          <div class="role-card" data-role="cryptographer">
+            <span class="role-icon">🔐</span>
+            <div class="role-name">CRYPTOGRAPHER</div>
+            <div class="role-desc">Break the codes</div>
+          </div>
+          <div class="role-card" data-role="exploiter">
+            <span class="role-icon">⚔️</span>
+            <div class="role-name">EXPLOITER</div>
+            <div class="role-desc">Launch attacks</div>
+          </div>
+          <div class="role-card" data-role="defender">
+            <span class="role-icon">🛡️</span>
+            <div class="role-name">DEFENDER</div>
+            <div class="role-desc">Beat detection</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-error" id="join-error"></div>
+
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn btn-cyan btn-full" id="join-submit-btn"><span>JOIN ROOM</span></button>
+        <button class="btn btn-red btn-sm" id="join-cancel-btn"><span>✕</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Toast Container ──────────────────────────────────────────── -->
+  <div id="toast-container"></div>
+
+  <!-- ── Firebase + Scripts ───────────────────────────────────────── -->
+  <script type="module">
+    import { Lobby } from "./js/lobby.js";
+    // ── Selected Role ──────────────────────────────────────────────
+    let createRole = null;
+    let joinRole = null;
+
+    function setupRoleGrid(gridId, onSelect) {
+      const grid = document.getElementById(gridId);
+      grid.querySelectorAll('.role-card').forEach(card => {
+        card.addEventListener('click', () => {
+          if (card.classList.contains('taken')) return;
+          grid.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+          onSelect(card.dataset.role);
+        });
+      });
+    }
+
+    setupRoleGrid('create-role-grid', r => createRole = r);
+    setupRoleGrid('join-role-grid', r => joinRole = r);
+
+    // ── Modal Toggles ──────────────────────────────────────────────
+    document.getElementById('btn-create').onclick = () => {
+      document.getElementById('modal-create').classList.remove('hidden');
+    };
+    document.getElementById('btn-join').onclick = () => {
+      document.getElementById('modal-join').classList.remove('hidden');
+    };
+    document.getElementById('create-cancel-btn').onclick = () => {
+      document.getElementById('modal-create').classList.add('hidden');
+    };
+    document.getElementById('join-cancel-btn').onclick = () => {
+      document.getElementById('modal-join').classList.add('hidden');
+    };
+
+    // ── Toast helper ────────────────────────────────────────────────
+    function showToast(msg, type = 'green') {
+      const c = document.getElementById('toast-container');
+      const t = document.createElement('div');
+      t.className = `toast toast-${type}`;
+      t.textContent = msg;
+      c.appendChild(t);
+      setTimeout(() => t.remove(), 4000);
+    }
+
+    // ── Create Room ─────────────────────────────────────────────────
+    document.getElementById('create-submit-btn').onclick = async () => {
+      const username = document.getElementById('create-username').value.trim();
+      const errEl = document.getElementById('create-error');
+
+      if (!username) { errEl.textContent = '⚠ Enter a codename'; return; }
+      if (!createRole) { errEl.textContent = '⚠ Select a role'; return; }
+      errEl.textContent = '';
+
+      const btn = document.getElementById('create-submit-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>';
+
+      try {
+        const code = await Lobby.createRoom(username, createRole);
+        document.getElementById('modal-create').classList.add('hidden');
+        enterLobby(code, true);
+      } catch (e) {
+        errEl.textContent = '⚠ ' + e.message;
+        btn.disabled = false;
+        btn.innerHTML = '<span>CREATE ROOM</span>';
+      }
+    };
+
+    // ── Join Room ───────────────────────────────────────────────────
+    document.getElementById('join-submit-btn').onclick = async () => {
+      const code = document.getElementById('join-code').value.trim().toUpperCase();
+      const username = document.getElementById('join-username').value.trim();
+      const errEl = document.getElementById('join-error');
+
+      if (!code) { errEl.textContent = '⚠ Enter the room code'; return; }
+      if (!username) { errEl.textContent = '⚠ Enter a codename'; return; }
+      if (!joinRole) { errEl.textContent = '⚠ Select a role'; return; }
+      errEl.textContent = '';
+
+      // Pre-check role availability
+      try {
+        const taken = await Lobby.getTakenRoles(code);
+        if (taken.includes(joinRole)) {
+          errEl.textContent = `⚠ Role already taken. Choose another.`;
+          // Mark taken roles
+          document.getElementById('join-role-grid').querySelectorAll('.role-card').forEach(card => {
+            if (taken.includes(card.dataset.role)) card.classList.add('taken');
+          });
+          return;
+        }
+      } catch (e) { errEl.textContent = '⚠ ' + e.message; return; }
+
+      const btn = document.getElementById('join-submit-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>';
+
+      try {
+        await Lobby.joinRoom(code, username, joinRole);
+        document.getElementById('modal-join').classList.add('hidden');
+        enterLobby(code, false);
+      } catch (e) {
+        errEl.textContent = '⚠ ' + e.message;
+        btn.disabled = false;
+        btn.innerHTML = '<span>JOIN ROOM</span>';
+      }
+    };
+
+    // ── Lobby ────────────────────────────────────────────────────────
+    function enterLobby(code, isHost) {
+      document.getElementById('landing-page').classList.add('hidden');
+      document.getElementById('lobby-page').classList.remove('hidden');
+      document.getElementById('lobby-room-code').textContent = code;
+
+      document.getElementById('nav-status').textContent = 'CONNECTED';
+      document.getElementById('nav-status').className = 'badge badge-green';
+      document.getElementById('nav-room').textContent = 'ROOM: ' + code;
+
+      if (isHost) {
+        document.getElementById('lobby-start-btn').style.display = 'inline-flex';
+      }
+
+      const allRoles = ['recon', 'cryptographer', 'exploiter', 'defender'];
+      const roleInfo = Lobby.ROLES;
+
+      Lobby.onPlayersUpdate(players => {
+        const grid = document.getElementById('players-grid');
+        grid.innerHTML = '';
+
+        // Show all 4 slots
+        allRoles.forEach(role => {
+          const player = Object.values(players).find(p => p.role === role);
+          const info = roleInfo[role];
+          const div = document.createElement('div');
+          div.className = 'player-slot' + (player ? ' filled' : '');
+          if (player) {
+            div.innerHTML = `
+            <span class="slot-icon">${info.icon}</span>
+            <div class="slot-role">${info.name}</div>
+            <div class="slot-name">${player.username}</div>
+          `;
+          } else {
+            div.innerHTML = `
+            <span class="slot-icon" style="opacity:0.3">${info.icon}</span>
+            <div class="slot-role" style="opacity:0.4">${info.name}</div>
+            <div class="slot-empty">Waiting...</div>
+          `;
+          }
+          grid.appendChild(div);
+        });
+
+        const count = Object.keys(players).length;
+        document.getElementById('lobby-status').textContent =
+          `${count}/4 agents connected${count < 2 ? ' — need at least 2 to start' : ' — ready to launch!'}`;
+
+        // Enable start btn only if >= 2 players
+        const startBtn = document.getElementById('lobby-start-btn');
+        if (startBtn) startBtn.disabled = count < 2;
+      });
+
+      Lobby.onGameStateChange(state => {
+        if (state === 'playing') {
+          window.location.href = 'game.html';
+        }
+      });
+    }
+
+    // ── Start & Leave ───────────────────────────────────────────────
+    document.getElementById('lobby-start-btn').onclick = async () => {
+      await Lobby.startGame();
+    };
+
+    document.getElementById('lobby-leave-btn').onclick = () => {
+      Lobby.clearSession();
+      document.getElementById('lobby-page').classList.add('hidden');
+      document.getElementById('landing-page').classList.remove('hidden');
+      document.getElementById('nav-status').textContent = 'OFFLINE';
+      document.getElementById('nav-room').textContent = '';
+    };
+
+    // ── Auto-join code from URL param ───────────────────────────────
+    const urlParams = new URLSearchParams(window.location.search);
+    const autoCode = urlParams.get('room');
+    if (autoCode) {
+      document.getElementById('join-code').value = autoCode.toUpperCase();
+      document.getElementById('modal-join').classList.remove('hidden');
+    }
+  </script>
+</body>
+
+</html>

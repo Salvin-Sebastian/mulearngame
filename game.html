@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cyber Heist — Mission Active</title>
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+
+    <!-- ── Game Page ────────────────────────────────────────────────── -->
+    <div id="game-page">
+
+        <!-- Game Header -->
+        <header class="game-header">
+            <div class="navbar-brand" style="font-size:0.85rem">CYBER<span style="color:var(--cyan)">HEIST</span></div>
+
+            <!-- Mission dots -->
+            <div class="mission-dots">
+                <div class="mission-dot active" title="Mission 1"></div>
+                <div class="mission-dot" title="Mission 2"></div>
+                <div class="mission-dot" title="Mission 3"></div>
+                <div class="mission-dot" title="Mission 4"></div>
+            </div>
+
+            <!-- Mission info -->
+            <div class="mission-title" id="mission-title-display">
+                <strong>MISSION 1</strong> — Loading...
+            </div>
+
+            <!-- Role badge -->
+            <div>
+                <span class="badge badge-green" id="role-badge">---</span>
+                <span style="font-family:var(--font-mono);font-size:0.75rem;color:var(--text-dim);margin-left:8px"
+                    id="player-name-display"></span>
+            </div>
+
+            <!-- Timer -->
+            <div class="timer-wrap">
+                <span class="timer-label">TIME</span>
+                <span id="timer-display">--:--</span>
+            </div>
+        </header>
+
+        <!-- ── Role Panel (left) ─────────────────────────────────────── -->
+        <main class="role-panel">
+            <!-- Panel header -->
+            <div class="role-panel-header">
+                <span class="glow-green"
+                    style="font-family:var(--font-head);font-size:0.75rem;letter-spacing:0.15em">YOUR MISSION
+                    BRIEF</span>
+                <span class="badge badge-cyan" id="mission-phase-badge">PHASE 1</span>
+            </div>
+
+            <!-- Narrative -->
+            <div class="narrative-box">
+                <span style="color:var(--cyan);font-size:0.7rem;letter-spacing:0.15em;display:block;margin-bottom:6px">◈
+                    BRIEFING</span>
+                <span id="mission-narrative"></span>
+            </div>
+
+            <!-- Clue box -->
+            <div class="clue-box">
+                <h4 id="clue-label">INTEL FEED</h4>
+                <div id="clue-list"></div>
+            </div>
+
+            <!-- Action area -->
+            <div class="action-box">
+                <div class="action-label">◈ YOUR TASK</div>
+                <div style="font-family:var(--font-mono);font-size:0.82rem;color:var(--text);margin-bottom:12px;line-height:1.5"
+                    id="action-question"></div>
+                <div id="answer-input-area"></div>
+            </div>
+        </main>
+
+        <!-- ── Scoreboard Panel (right) ──────────────────────────────── -->
+        <aside class="scoreboard-panel">
+
+            <!-- Team total -->
+            <div class="team-total">
+                <div class="team-total-label">◈ TEAM SCORE</div>
+                <div class="team-total-score" id="team-total-score">0</div>
+            </div>
+
+            <!-- Per-player scores -->
+            <div class="scoreboard-title">AGENT SCORES</div>
+            <div id="score-list"></div>
+
+            <!-- Divider -->
+            <hr class="divider" />
+
+            <!-- Intel Chat -->
+            <div class="intel-box">
+                <div class="intel-box-title">📡 TEAM INTEL CHANNEL</div>
+                <div class="intel-messages" id="intel-messages">
+                    <div class="intel-msg">
+                        <span class="msg-from" style="color:var(--text-dim)">[SYSTEM]</span>
+                        <span class="msg-text"> Use this to share clues with your team.</span>
+                    </div>
+                </div>
+                <div class="intel-input-wrap">
+                    <input type="text" id="intel-msg-input" placeholder="Share intel with team..." maxlength="200" />
+                    <button class="intel-send" id="intel-send-btn" title="Send">▶</button>
+                </div>
+            </div>
+
+            <!-- Room info -->
+            <div style="text-align:center">
+                <div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--text-dim)">ROOM</div>
+                <div style="font-family:var(--font-head);font-size:1rem;color:var(--green)" id="game-room-code">----
+                </div>
+            </div>
+
+        </aside>
+    </div>
+
+    <!-- ── End Game Page ─────────────────────────────────────────────── -->
+    <div id="endgame-page" class="hidden">
+        <!-- Scanline highlight -->
+        <div
+            style="position:fixed;inset:0;background:radial-gradient(ellipse at center, rgba(0,255,153,0.06) 0%, transparent 70%);pointer-events:none;z-index:0">
+        </div>
+
+        <div style="position:relative;z-index:1;width:100%;max-width:520px;text-align:center">
+            <div class="hero-tag">MISSION COMPLETE</div>
+            <h1 class="endgame-title win" id="endgame-title">---</h1>
+            <p class="endgame-sub" id="endgame-subtitle"></p>
+
+            <!-- Team total -->
+            <div class="glass" style="padding:20px;margin-bottom:28px;border-color:var(--cyan)">
+                <div style="font-family:var(--font-head);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.2em">
+                    TOTAL TEAM SCORE</div>
+                <div style="font-family:var(--font-head);font-size:2.5rem;color:var(--cyan);text-shadow:var(--glow-cyan)"
+                    id="endgame-team-score">0</div>
+            </div>
+
+            <!-- Per-player breakdown -->
+            <div class="endgame-scores" id="endgame-score-list"></div>
+
+            <!-- CTA buttons -->
+            <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px">
+                <a href="index.html" class="btn btn-lg"><span>🔄 PLAY AGAIN</span></a>
+                <button class="btn btn-cyan" id="endgame-share-btn"><span>📋 COPY SCORE</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Toast Container ──────────────────────────────────────────── -->
+    <div id="toast-container"></div>
+
+    <script type="module">
+        import { Lobby } from "./js/lobby.js";
+        import { Game } from "./js/game.js";
+        // ── Boot ──────────────────────────────────────────────────────
+        window.addEventListener('DOMContentLoaded', () => {
+            // Restore session from localStorage
+            const restored = Lobby.restoreSession();
+            if (!restored) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const roomCode = Lobby.getRoom();
+            const player = Lobby.getPlayer();
+
+            // Update room code display
+            document.getElementById('game-room-code').textContent = roomCode;
+
+            // Init game logic
+            Game.initGame();
+        });
+
+        // ── Share Score ───────────────────────────────────────────────
+        document.getElementById('endgame-share-btn').addEventListener('click', () => {
+            const score = document.getElementById('endgame-team-score').textContent;
+            const text = `🎯 Cyber Heist: Team Breach — Team Score: ${score}`;
+            navigator.clipboard.writeText(text).then(() => {
+                Game.showToast('Score copied to clipboard!', 'cyan');
+            });
+        });
+    </script>
+</body>
+
+</html>
