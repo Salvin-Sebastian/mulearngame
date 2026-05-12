@@ -344,7 +344,7 @@ function clearSession() {
 
 function readRoom(code) { return _readLocal(code); }
 
-window.addEventListener('DOMContentLoaded', () => {
+function updateNavStatus() {
     const el = document.getElementById('nav-status');
     if (el) {
         if (FIREBASE_READY && db) {
@@ -355,7 +355,12 @@ window.addEventListener('DOMContentLoaded', () => {
             el.className = 'badge badge-yellow';
         }
     }
-});
+}
+if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', updateNavStatus);
+} else {
+    updateNavStatus();
+}
 
 function getActiveRoles() {
     const code = currentRoom;
