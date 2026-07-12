@@ -375,12 +375,43 @@ function getActiveRoles() {
 }
 let _cachedActiveRoles = [];
 
+async function saveToLeaderboard(roomCode, finalScore, rankInfo, players) {
+    const entry = {
+        roomCode,
+        score: finalScore,
+        rank: rankInfo.rank,
+        ts: Date.now(),
+        players: Object.values(players).map(p => ({ username: p.username, role: p.role }))
+    };
+    if (FIREBASE_READY && db) {
+        await db.ref(`leaderboard/${roomCode}`).set(entry);
+    } else {
+        const lb = JSON.parse(localStorage.getItem('ch_leaderboard') || '[]');
+        // Prevent duplicate local entries for same room
+        const filtered = lb.filter(e => e.roomCode !== roomCode);
+        filtered.push(entry);
+        localStorage.setItem('ch_leaderboard', JSON.stringify(filtered));
+    }
+}
+
+async function getLeaderboard() {
+    if (FIREBASE_READY && db) {
+        const snap = await db.ref('leaderboard').once('value');
+        const vals = snap.val() || {};
+        return Object.values(vals).sort((a, b) => b.score - a.score);
+    } else {
+        const lb = JSON.parse(localStorage.getItem('ch_leaderboard') || '[]');
+        return lb.sort((a, b) => b.score - a.score);
+    }
+}
+
 export const Lobby = {
     ROLES, createRoom, joinRoom, startGame, broadcastScore, markSolved,
     markTaskCompleted, updateTeamBonus,
     advanceMission, endGame, sendIntelMessage,
     onPlayersUpdate, onGameStateChange, onMissionChange, onIntelMessages,
     getTakenRoles, restoreSession, clearSession, readRoom, getActiveRoles,
+    saveToLeaderboard, getLeaderboard,
     getPlayer: () => currentPlayer,
     getRoom: () => currentRoom,
     isOnline: () => FIREBASE_READY && !!db

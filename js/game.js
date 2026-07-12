@@ -681,6 +681,12 @@ function showEndGame(players, room) {
     const tScore = document.getElementById('endgame-team-score');
     if (tScore) tScore.textContent = finalScore.toLocaleString() + ' PTS';
 
+    // Host pushes to global leaderboard
+    const pInfo = Lobby.getPlayer();
+    if (pInfo && pInfo.isHost) {
+        Lobby.saveToLeaderboard(Lobby.getRoom(), finalScore, rankInfo, players);
+    }
+
     // Inject beautiful Rank Card
     let rankCardWrap = document.getElementById('endgame-rank-card-wrap');
     if (!rankCardWrap) {

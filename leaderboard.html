@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Operation Shadow Grid — Leaderboard</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .leaderboard-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    .leaderboard-table th, .leaderboard-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+    }
+    .leaderboard-table th {
+      color: var(--text-dim);
+      font-family: var(--font-head);
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+    }
+    .leaderboard-table tr:hover td {
+      background: rgba(0, 229, 255, 0.05);
+    }
+    .top-rank {
+      color: var(--crypto);
+      font-weight: bold;
+      text-shadow: var(--crypto-glow);
+    }
+    .player-tag {
+      display: inline-block;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--recon);
+      color: var(--recon);
+      padding: 2px 6px;
+      font-size: 0.7rem;
+      border-radius: 4px;
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-brand">OPERATION<span>SHADOW</span>GRID</div>
+    <div class="flex gap-8">
+      <a href="index.html" class="badge badge-cyan" style="text-decoration:none">◀ RETURN TO TERMINAL</a>
+      <span class="badge badge-green" id="nav-status">OFFLINE</span>
+    </div>
+  </nav>
+
+  <section style="max-width: 800px; margin: 40px auto; padding: 0 20px;">
+    <div class="hero-tag">GLOBAL COMBAT RATINGS</div>
+    <h1 class="hero-title" style="font-size:2.5rem; text-align:left;">MATRIX<br><span class="accent">LEADERBOARD</span></h1>
+    <p class="hero-sub" style="text-align:left; margin-bottom: 30px;">
+      Top performing tactical teams across all global nodes. Only the highest combat ratings are permanently inscribed in the matrix.
+    </p>
+
+    <div class="glass" style="padding: 24px;">
+      <table class="leaderboard-table" id="leaderboard-table">
+        <thead>
+          <tr>
+            <th width="50">#</th>
+            <th width="120">TEAM UPLINK</th>
+            <th width="150">COMBAT RATING</th>
+            <th>OPERATIVES</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboard-body">
+          <tr>
+            <td colspan="4" style="text-align:center; padding:40px; color:var(--text-dim);">
+              <span class="spinner"></span> Decrypting Leaderboard Data...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <script type="module" src="js/leaderboard.js"></script>
+</body>
+</html>
